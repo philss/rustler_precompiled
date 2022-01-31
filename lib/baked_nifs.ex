@@ -1,0 +1,2 @@
+defmodule BakedNifs do
+end
