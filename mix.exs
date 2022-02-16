@@ -7,6 +7,7 @@ defmodule RustlerPrecompiled.MixProject do
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
+      docs: docs(),
       deps: deps()
     ]
   end
@@ -14,6 +15,13 @@ defmodule RustlerPrecompiled.MixProject do
   def application do
     [
       extra_applications: [:logger, :crypto, :inets, :public_key]
+    ]
+  end
+
+  defp docs do
+    [
+      main: "RustlerPrecompiled",
+      extras: ["PRECOMPILATION_GUIDE.md"]
     ]
   end
 
