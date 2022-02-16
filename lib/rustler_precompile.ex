@@ -4,7 +4,9 @@ defmodule RustlerPrecompiled do
 
   Rustler Precompiled is a tool for library maintainers of libs that rely
   on Rustler. It helps by removing the need to have compilers installed in
-  the user machine.
+  the user's machine.
+
+  Check the [Precompilation Guide](PRECOMPILATION_GUIDE.md) for details.
 
   ## Example
 
