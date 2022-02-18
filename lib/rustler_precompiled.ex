@@ -21,16 +21,41 @@ defmodule RustlerPrecompiled do
   ## Options
 
     * `:otp_app` - The OTP app name that the dynamic library will be loaded from.
+
     * `:crate` - The name of Rust crate if different from the `:otp_app`. This is optional.
+
     * `:base_url` - A valid URL that is used as base path for the NIF file.
+
     * `:version` - The version of precompiled assets (it is part of the NIF filename).
 
+    * `:force_build` - Force the build with `Rustler`. This is `false` by default, but
+      if your `:version` is a pre-release (like "2.1.0-dev"), this option will always
+      be set `true`.
+      You can also configure this option by setting an application env like this:
+
+          config :rustler_precompiled, :force_build, your_otp_app: true  
+
+  In case "force build" is used, all options except `:base_url`, `:version` and `:force_build`
+  are going to be passed down to `Rustler`.
+  So if you need to configure the build, check the `Rustler` options.
   """
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       require Logger
 
+      otp_app = Keyword.fetch!(opts, :otp_app)
+
+      opts =
+        Keyword.put_new(
+          opts,
+          :force_build,
+          Application.compile_env(:rustler_precompiled, [:force_build, otp_app])
+        )
+
       case RustlerPrecompiled.__using__(__MODULE__, opts) do
+        {:force_build, only_rustler_opts} ->
+          use Rustler, only_rustler_opts
+
         {:ok, config} ->
           @on_load :load_rustler_precompiled
 
@@ -51,23 +76,36 @@ defmodule RustlerPrecompiled do
           end
 
         {:error, precomp_error} ->
-          error = "Error while downloading precompiled NIF: #{precomp_error}\n\n"
-
-          if Mix.env() == :prod do
-            raise error
-          else
-            Logger.debug(error)
-          end
+          raise precomp_error
       end
     end
   end
 
+  # A helper function to extract the logic from __using__ macro.
+  @doc false
   def __using__(module, opts) do
-    opts = Keyword.put_new(opts, :module, module)
+    config =
+      opts
+      |> Keyword.put_new(:module, module)
+      |> RustlerPrecompiled.Config.new()
 
-    config = RustlerPrecompiled.Config.new(opts)
+    if config.force_build? do
+      rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build])
 
-    RustlerPrecompiled.download_or_reuse_nif_file(config)
+      {:force_build, rustler_opts}
+    else
+      with {:error, precomp_error} <- RustlerPrecompiled.download_or_reuse_nif_file(config) do
+        message = """
+        Error while downloading precompiled NIF: #{precomp_error}.
+
+        You can force the project to build from scratch with:
+
+            config :rustler_precompiled, :force_build, #{config.otp_app}: true
+        """
+
+        {:error, message}
+      end
+    end
   end
 
   ## Implementation below
