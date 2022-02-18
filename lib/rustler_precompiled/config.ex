@@ -43,12 +43,12 @@ defmodule RustlerPrecompiled.Config do
   defp validate_base_url!(nil), do: raise_for_nil_field_value(:base_url)
 
   defp validate_base_url!(base_url) do
-    case URI.new(base_url) do
-      {:ok, _} ->
+    case :uri_string.parse(base_url) do
+      %{} ->
         base_url
 
-      {:error, error} ->
-        raise "`:base_url` for `RustlerPrecompiled` is invalid: #{inspect(error)}"
+      {:error, :invalid_uri, error} ->
+        raise "`:base_url` for `RustlerPrecompiled` is invalid: #{inspect(to_string(error))}"
     end
   end
 
