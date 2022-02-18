@@ -53,7 +53,7 @@ defmodule RustlerPrecompiled do
         )
 
       case RustlerPrecompiled.__using__(__MODULE__, opts) do
-        {:ok, {:force_build, only_rustler_opts}} ->
+        {:force_build, only_rustler_opts} ->
           use Rustler, only_rustler_opts
 
         {:ok, config} ->
@@ -76,17 +76,13 @@ defmodule RustlerPrecompiled do
           end
 
         {:error, precomp_error} ->
-          raise """
-          Error while downloading precompiled NIF: #{precomp_error}.
-
-          You can force the project to build from scratch with:
-
-              config :rustler_precompiled, :force_build, #{otp_app}: true
-          """
+          raise precomp_error
       end
     end
   end
 
+  # A helper function to extract the logic from __using__ macro.
+  @doc false
   def __using__(module, opts) do
     config =
       opts
@@ -96,9 +92,19 @@ defmodule RustlerPrecompiled do
     if config.force_build? do
       rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build])
 
-      {:ok, {:force_build, rustler_opts}}
+      {:force_build, rustler_opts}
     else
-      RustlerPrecompiled.download_or_reuse_nif_file(config)
+      with {:error, precomp_error} <- RustlerPrecompiled.download_or_reuse_nif_file(config) do
+        message = """
+        Error while downloading precompiled NIF: #{precomp_error}.
+
+        You can force the project to build from scratch with:
+
+            config :rustler_precompiled, :force_build, #{config.otp_app}: true
+        """
+
+        {:error, message}
+      end
     end
   end
 
