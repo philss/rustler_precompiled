@@ -1,14 +1,28 @@
 defmodule RustlerPrecompiled.Config do
   @moduledoc false
   # This is an internal struct to represent valid config options.
-  defstruct [:otp_app, :module, :base_url, :version, :crate, :base_cache_dir, :load_data]
+  defstruct [
+    :otp_app,
+    :module,
+    :base_url,
+    :version,
+    :crate,
+    :base_cache_dir,
+    :load_data,
+    :force_build?
+  ]
 
   def new(opts) do
+    version = Keyword.fetch!(opts, :version)
+    otp_app = opts |> Keyword.fetch!(:otp_app) |> validate_otp_app!()
+    base_url = opts |> Keyword.fetch!(:base_url) |> validate_base_url!()
+
     %__MODULE__{
-      otp_app: Keyword.fetch!(opts, :otp_app) |> validate_otp_app!(),
-      base_url: opts |> Keyword.fetch!(:base_url) |> validate_base_url!(),
+      otp_app: otp_app,
+      base_url: base_url,
       module: Keyword.fetch!(opts, :module),
-      version: Keyword.fetch!(opts, :version),
+      version: version,
+      force_build?: pre_release?(version) or Keyword.fetch!(opts, :force_build),
       crate: opts[:crate],
       # Default to `0` like `Rustler`.
       load_data: opts[:load_data] || 0,
@@ -40,5 +54,9 @@ defmodule RustlerPrecompiled.Config do
 
   defp raise_for_nil_field_value(field) do
     raise "`#{inspect(field)}` is required for `RustlerPrecompiled`"
+  end
+
+  defp pre_release?(version) do
+    "dev" in Version.parse!(version).pre
   end
 end

@@ -1,8 +1,6 @@
 defmodule RustlerPrecompiledTest do
   use ExUnit.Case, async: true
 
-  alias RustlerPrecompiled
-
   import ExUnit.CaptureLog
 
   test "target/1" do
@@ -287,6 +285,41 @@ defmodule RustlerPrecompiledTest do
         assert result =~ "Downloading"
         assert result =~ "http://localhost:#{bypass.port}/download"
         assert result =~ "NIF cached at"
+      end)
+    end
+
+    @tag :tmp_dir
+    test "a project downloading precompiled NIFs without the checksum file", %{
+      tmp_dir: tmp_dir,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open()
+
+      in_tmp(tmp_dir, fn ->
+        Bypass.expect_once(bypass, fn conn ->
+          file_name = List.last(conn.path_info)
+          file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          Plug.Conn.resp(conn, 200, file)
+        end)
+
+        capture_log(fn ->
+          config = %RustlerPrecompiled.Config{
+            otp_app: :rustler_precompiled,
+            module: RustlerPrecompilationExample.Native,
+            base_cache_dir: tmp_dir,
+            base_url: "http://localhost:#{bypass.port}/download",
+            version: "0.2.0",
+            crate: "example"
+          }
+
+          assert {:error, error} = RustlerPrecompiled.download_or_reuse_nif_file(config)
+
+          assert error =~
+                   "the precompiled NIF file does not exist in the checksum file. " <>
+                     "Please consider run: `mix rustler_precompiled.download RustlerPrecompilationExample.Native --only-local` " <>
+                     "to generate the checksum file."
+        end)
       end)
     end
   end
