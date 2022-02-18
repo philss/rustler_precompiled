@@ -64,7 +64,7 @@ matrix:
     - { target: x86_64-pc-windows-msvc      , os: windows-2019 , nif: "2.14" }
 ```
 
-A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/91d8910b58afc71d76ad9094b5f2d9041c0049c8/.github/workflows/release.yml) project.
+A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
 
 ## Additional configuration before build
 
@@ -103,29 +103,25 @@ We need to tell `RustlerPrecompiled` where to find our NIF files, and we need to
 defmodule RustlerPrecompilationExample.Native do
   version = Mix.Project.config()[:version]
 
-  if System.get_env("RUSTLER_PRECOMPILATION_EXAMPLE_BUILD") in ["1", "true"] do
-    use Rustler,
-      otp_app: :rustler_precompilation_example,
-      crate: "example"
-  else
-    use RustlerPrecompiled,
-      otp_app: :rustler_precompilation_example,
-      crate: "example",
-      base_url:
-        "https://github.com/philss/rustler_precompilation_example/releases/download/v#{version}",
-      version: version
-  end
+  use RustlerPrecompiled,
+    otp_app: :rustler_precompilation_example,
+    crate: "example",
+    base_url:
+      "https://github.com/philss/rustler_precompilation_example/releases/download/v#{version}",
+    force_build: System.get_env("RUSTLER_PRECOMPILATION_EXAMPLE_BUILD") in ["1", "true"],
+    version: version
 
   # When your NIF is loaded, it will override this function.
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
 end
 ```
 
-This example was extracted from the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/91d8910b58afc71d76ad9094b5f2d9041c0049c8/lib/rustler_precompilation_example/native.ex) project.
+This example was extracted from the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/lib/rustler_precompilation_example/native.ex) project.
 RustlerPrecompiled will try to figure out the target and download the correct file for us. This will happen in compile
 time only.
 
 Optionally it's possible to force the compilation by setting an env var, like the example suggests.
+It's also possible to force the build by using a pre release version, like `0.1.0-dev`.
 
 ## The release flow
 
