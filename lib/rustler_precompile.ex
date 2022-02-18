@@ -1,10 +1,10 @@
 defmodule RustlerPrecompiled do
   @moduledoc """
-  Download and use precompiled NIFs with safety
+  Download and use precompiled NIFs safely with checksums.
 
-  Rustler Precompiled is a tool for library maintainers of libs that rely
-  on Rustler. It helps by removing the need to have compilers installed in
-  the user's machine.
+  Rustler Precompiled is a tool for library maintainers that rely on Rustler.
+  It helps by removing the need to have the Rust compiler installed in the
+  user's machine.
 
   Check the [Precompilation Guide](PRECOMPILATION_GUIDE.md) for details.
 
@@ -23,7 +23,7 @@ defmodule RustlerPrecompiled do
     * `:otp_app` - The OTP app name that the dynamic library will be loaded from.
     * `:crate` - The name of Rust crate if different from the `:otp_app`. This is optional.
     * `:base_url` - A valid URL that is used as base path for the NIF file.
-    * `:version` - The version to be used. This is important since it compose the NIF file name.
+    * `:version` - The version of precompiled assets (it is part of the NIF filename).
 
   """
   defmacro __using__(opts) do
@@ -103,7 +103,7 @@ defmodule RustlerPrecompiled do
   @native_dir "priv/native"
 
   @doc """
-  List all default available targets
+  List all default available targets.
   """
   def available_targets do
     for target_triple <- @available_targets, nif_version <- @available_nif_versions do
@@ -112,7 +112,7 @@ defmodule RustlerPrecompiled do
   end
 
   @doc """
-  Returns URLs for NIFs based on its module name
+  Returns URLs for NIFs based on its module name.
 
   The module name is the one that defined the NIF and this information
   is stored in a metadata file.
@@ -139,7 +139,7 @@ defmodule RustlerPrecompiled do
   end
 
   @doc """
-  Returns the file URL to be downloaded for current target
+  Returns the file URL to be downloaded for current target.
 
   It receives the NIF module.
   """
@@ -165,9 +165,9 @@ defmodule RustlerPrecompiled do
   This function is translating and adding more info to the system
   architecture returned by Elixir/Erlang to one used by Rust.
 
-  The returning string format is the following:
+  The returned string has the following format:
 
-    "nif-NIF_VERSION-ARCHITECTURE-VENDOR-OS-ABI"
+      "nif-NIF_VERSION-ARCHITECTURE-VENDOR-OS-ABI"
 
   ## Examples
 
