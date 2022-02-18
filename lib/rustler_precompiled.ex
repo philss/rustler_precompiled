@@ -30,55 +30,44 @@ defmodule RustlerPrecompiled do
     quote bind_quoted: [opts: opts] do
       require Logger
 
-      opts = Keyword.put_new(opts, :module, __MODULE__)
+      case RustlerPrecompiled.__using__(__MODULE__, opts) do
+        {:ok, config} ->
+          @on_load :load_rustler_precompiled
 
-      config = RustlerPrecompiled.Config.new(opts)
+          @doc false
+          def load_rustler_precompiled do
+            # Remove any old modules that may be loaded so we don't get
+            # {:error, {:upgrade, 'Upgrade not supported by this NIF library.'}}
+            :code.purge(__MODULE__)
 
-      config =
-        case RustlerPrecompiled.download_or_reuse_nif_file(config) do
-          {:ok, result} ->
-            result
+            {otp_app, path} = unquote(config.load_from)
 
-          {:error, precomp_error} ->
-            error = "Error while downloading precompiled NIF: #{precomp_error}\n\n"
+            load_path =
+              otp_app
+              |> Application.app_dir(path)
+              |> to_charlist()
 
-            if Mix.env() == :prod do
-              raise error
-            else
-              Logger.debug(error)
-              %{load?: false}
-            end
-        end
+            :erlang.load_nif(load_path, unquote(config.load_data))
+          end
 
-      if config.load? do
-        @load_from config.load_from
-        @load_data config.load_data
+        {:error, precomp_error} ->
+          error = "Error while downloading precompiled NIF: #{precomp_error}\n\n"
 
-        @before_compile RustlerPrecompiled
+          if Mix.env() == :prod do
+            raise error
+          else
+            Logger.debug(error)
+          end
       end
     end
   end
 
-  defmacro __before_compile__(_env) do
-    quote do
-      @on_load :load_rustler_precompiled
+  def __using__(module, opts) do
+    opts = Keyword.put_new(opts, :module, module)
 
-      @doc false
-      def load_rustler_precompiled do
-        # Remove any old modules that may be loaded so we don't get
-        # {:error, {:upgrade, 'Upgrade not supported by this NIF library.'}}
-        :code.purge(__MODULE__)
+    config = RustlerPrecompiled.Config.new(opts)
 
-        {otp_app, path} = @load_from
-
-        load_path =
-          otp_app
-          |> Application.app_dir(path)
-          |> to_charlist()
-
-        :erlang.load_nif(load_path, @load_data)
-      end
-    end
+    RustlerPrecompiled.download_or_reuse_nif_file(config)
   end
 
   ## Implementation below
