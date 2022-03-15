@@ -5,7 +5,8 @@
 This project aims to make the usage of precompiled NIFs easier
 for Elixir projects using [Rustler](https://github.com/rusterlium/rustler).
 
-Check the [documentation](https://hexdocs.pm/rustler_precompiled) for further details.
+Read the [blog post](https://dashbit.co/blog/rustler-precompiled) announcing Rustler precompiled, and
+check the [documentation](https://hexdocs.pm/rustler_precompiled) for further details.
 
 ## Installation
 
