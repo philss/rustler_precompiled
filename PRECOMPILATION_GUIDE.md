@@ -70,7 +70,7 @@ A complete workflow example can be found in the [`rustler_precompilation_example
 
 In our build we are going to cross compile our crate project (the Rust code for our NIF) using
 a variety of targets as we saw in the previous section. For this to work we need to guide the Rust
-compiler in some cases provinding configuration in the `.cargo/config` file of our project.
+compiler in some cases by providing additional configuration in the `.cargo/config` file of our project.
 
 Here is an example of that file:
 
