@@ -630,14 +630,16 @@ defmodule RustlerPrecompiled do
   # Download a list of files from URLs and calculate its checksum.
   # Returns a list with details of the download and the checksum of each file.
   @doc false
-  def download_nif_artifacts_with_checksums!(urls) do
+  def download_nif_artifacts_with_checksums!(urls, options \\ []) do
+    ignore_unavailable? = Keyword.get(options, :ignore_unavailable, false)
+
     tasks =
       Task.async_stream(urls, fn url -> {url, download_nif_artifact(url)} end, timeout: :infinity)
 
     cache_dir = cache_dir("precompiled_nifs")
     :ok = File.mkdir_p(cache_dir)
 
-    Enum.map(tasks, fn {:ok, result} ->
+    Enum.flat_map(tasks, fn {:ok, result} ->
       with {:download, {url, download_result}} <- {:download, result},
            {:download_result, {:ok, body}} <- {:download_result, download_result},
            hash <- :crypto.hash(@checksum_algo, body),
@@ -649,16 +651,27 @@ defmodule RustlerPrecompiled do
           "NIF cached at #{path} with checksum #{inspect(checksum)} (#{@checksum_algo})"
         )
 
-        %{
-          url: url,
-          path: path,
-          checksum: checksum,
-          checksum_algo: @checksum_algo
-        }
+        [
+          %{
+            url: url,
+            path: path,
+            checksum: checksum,
+            checksum_algo: @checksum_algo
+          }
+        ]
       else
         {context, result} ->
-          raise "could not finish the download of NIF artifacts. " <>
-                  "Context: #{inspect(context)}. Reason: #{inspect(result)}"
+          if ignore_unavailable? && context in [:download, :download_result] do
+            Logger.debug(
+              "Skip an unavailable NIF artifact. " <>
+                "Context: #{inspect(context)}. Reason: #{inspect(result)}"
+            )
+
+            []
+          else
+            raise "could not finish the download of NIF artifacts. " <>
+                    "Context: #{inspect(context)}. Reason: #{inspect(result)}"
+          end
       end
     end)
   end
