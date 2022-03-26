@@ -16,7 +16,7 @@ list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:rustler_precompiled, "~> 0.2"}
+    {:rustler_precompiled, "~> 0.3"}
   ]
 end
 ```
