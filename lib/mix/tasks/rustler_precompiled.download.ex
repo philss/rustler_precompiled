@@ -12,30 +12,42 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
   You can also use the `--only-local` flag to download only the precompiled
   package for use during development.
 
+  You can use the `--ignore-unavailable` flag to ignore any NIFs that are not available.
+  This is useful when you are developing a new NIF that does not support all platforms.
+
   This task also accept the `--print` flag to print the checksums.
   """
 
   use Mix.Task
 
+  @switches [
+    all: :boolean,
+    only_local: :boolean,
+    print: :boolean,
+    ignore_unavailable: :boolean
+  ]
+
   @impl true
-  def run([module_name | maybe_flags]) do
+  def run([module_name | flags]) do
     module = String.to_atom("Elixir.#{module_name}")
+
+    {options, _args, _invalid} = OptionParser.parse(flags, strict: @switches)
 
     urls =
       cond do
-        "--all" in maybe_flags ->
+        Keyword.get(options, :all) ->
           RustlerPrecompiled.available_nif_urls(module)
 
-        "--only-local" in maybe_flags ->
+        Keyword.get(options, :only_local) ->
           [RustlerPrecompiled.current_target_nif_url(module)]
 
         true ->
           raise "you need to specify either \"--all\" or \"--only-local\" flags"
       end
 
-    result = RustlerPrecompiled.download_nif_artifacts_with_checksums!(urls)
+    result = RustlerPrecompiled.download_nif_artifacts_with_checksums!(urls, options)
 
-    if "--print" in maybe_flags do
+    if Keyword.get(options, :print) do
       result
       |> Enum.map(fn map ->
         {Path.basename(Map.fetch!(map, :path)), Map.fetch!(map, :checksum)}
