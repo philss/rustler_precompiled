@@ -35,6 +35,11 @@ defmodule RustlerPrecompiled do
 
           config :rustler_precompiled, :force_build, your_otp_app: true  
 
+      It is important to add the ":rustler" package to your dependencies in order to force
+      the build. To do that, just add it to your `mix.exs` file:
+
+          {:rustler, ">= 0.0.0", optional: true}
+
   In case "force build" is used, all options except `:base_url`, `:version` and `:force_build`
   are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
@@ -54,7 +59,12 @@ defmodule RustlerPrecompiled do
 
       case RustlerPrecompiled.__using__(__MODULE__, opts) do
         {:force_build, only_rustler_opts} ->
-          use Rustler, only_rustler_opts
+          if Code.ensure_loaded?(Rustler) do
+            use Rustler, only_rustler_opts
+          else
+            raise "Rustler dependency is needed to force the build. " <>
+                    "Add it to your `mix.exs` file: `{:rustler, \">= 0.0.0\", optional: true}`"
+          end
 
         {:ok, config} ->
           @on_load :load_rustler_precompiled
@@ -101,6 +111,10 @@ defmodule RustlerPrecompiled do
         You can force the project to build from scratch with:
 
             config :rustler_precompiled, :force_build, #{config.otp_app}: true
+
+        In order to force the build, you also need to add Rustler as a dependency in your `mix.exs`:
+
+            {:rustler, ">= 0.0.0", optional: true}
         """
 
         {:error, message}

@@ -34,7 +34,7 @@ defmodule RustlerPrecompiled.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.23"},
+      {:rustler, "~> 0.23", optional: true},
       {:castore, "~> 0.1"},
       {:ex_doc, "~> 0.27", only: :dev},
       {:bypass, "~> 2.1", only: :test}
