@@ -60,11 +60,13 @@ defmodule RustlerPrecompiled do
     quote do
       require Logger
 
-      otp_app = Keyword.fetch!(unquote(opts), :otp_app)
+      opts = unquote(opts)
+
+      otp_app = Keyword.fetch!(opts, :otp_app)
 
       opts =
         Keyword.put_new(
-          unquote(opts),
+          opts,
           :force_build,
           Application.compile_env(:rustler_precompiled, [:force_build, otp_app])
         )
