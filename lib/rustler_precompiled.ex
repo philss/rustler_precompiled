@@ -45,44 +45,52 @@ defmodule RustlerPrecompiled do
   So if you need to configure the build, check the `Rustler` options.
   """
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
+    force =
+      if Code.ensure_loaded?(Rustler) do
+        quote do
+          use Rustler, only_rustler_opts
+        end
+      else
+        quote do
+          raise "Rustler dependency is needed to force the build. " <>
+                  "Add it to your `mix.exs` file: `{:rustler, \">= 0.0.0\", optional: true}`"
+        end
+      end
+
+    quote do
       require Logger
 
-      otp_app = Keyword.fetch!(opts, :otp_app)
+      otp_app = Keyword.fetch!(unquote(opts), :otp_app)
 
       opts =
         Keyword.put_new(
-          opts,
+          unquote(opts),
           :force_build,
           Application.compile_env(:rustler_precompiled, [:force_build, otp_app])
         )
 
       case RustlerPrecompiled.__using__(__MODULE__, opts) do
         {:force_build, only_rustler_opts} ->
-          if Code.ensure_loaded?(Rustler) do
-            use Rustler, only_rustler_opts
-          else
-            raise "Rustler dependency is needed to force the build. " <>
-                    "Add it to your `mix.exs` file: `{:rustler, \">= 0.0.0\", optional: true}`"
-          end
+          unquote(force)
 
         {:ok, config} ->
           @on_load :load_rustler_precompiled
+          @rustler_precompiled_load_from config.load_from
+          @rustler_precompiled_load_data config.load_data
 
           @doc false
           def load_rustler_precompiled do
             # Remove any old modules that may be loaded so we don't get
             # {:error, {:upgrade, 'Upgrade not supported by this NIF library.'}}
             :code.purge(__MODULE__)
-
-            {otp_app, path} = unquote(config.load_from)
+            {otp_app, path} = @rustler_precompiled_load_from
 
             load_path =
               otp_app
               |> Application.app_dir(path)
               |> to_charlist()
 
-            :erlang.load_nif(load_path, unquote(config.load_data))
+            :erlang.load_nif(load_path, @rustler_precompiled_load_data)
           end
 
         {:error, precomp_error} ->
