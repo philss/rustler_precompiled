@@ -38,7 +38,7 @@ defmodule RustlerPrecompiled do
       It is important to add the ":rustler" package to your dependencies in order to force
       the build. To do that, just add it to your `mix.exs` file:
 
-          {:rustler, ">= 0.0.0"}
+          {:rustler, ">= 0.0.0", optional: true}
 
   In case "force build" is used, all options except `:base_url`, `:version` and `:force_build`
   are going to be passed down to `Rustler`.
@@ -63,7 +63,7 @@ defmodule RustlerPrecompiled do
             use Rustler, only_rustler_opts
           else
             raise "Rustler dependency is needed to force the build. " <>
-                    "Add it to your `mix.exs` file: `{:rustler, \">= 0.0.0\"}`"
+                    "Add it to your `mix.exs` file: `{:rustler, \">= 0.0.0\", optional: true}`"
           end
 
         {:ok, config} ->
@@ -114,7 +114,7 @@ defmodule RustlerPrecompiled do
 
         In order to force the build, you also need to add Rustler as a dependency in your `mix.exs`:
 
-            {:rustler, ">= 0.0.0"}
+            {:rustler, ">= 0.0.0", optional: true}
         """
 
         {:error, message}

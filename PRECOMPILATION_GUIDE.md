@@ -123,7 +123,7 @@ time only.
 Optionally it's possible to force the compilation by setting an env var, like the example suggests.
 It's also possible to force the build by using a pre release version, like `0.1.0-dev`. The only
 requirement to force the build is to have Rustler declared as a dependency as well:
-`{:rustler, ">= 0.0.0"}`. In case you are only compiling in dev/test environments, you can specify
+`{:rustler, ">= 0.0.0", optional: true}`. In case you are only compiling in dev/test environments, you can specify
 that with `:only`: `{:rustler, ">= 0.0.0", only: [:dev, :test]}`.
 
 ## The release flow
