@@ -21,6 +21,17 @@ Most of the work is done in the CI server. In this example we are going to use G
 The GH Actions service has the benefit of hosting artifacts for releases and make them
 public available.
 
+### Configure Github Actions
+
+In order for the workflow to succeed, read and write permissions will need to be enabled for the
+repository.
+
+1. Settings > Actions > General
+2. Workflow permissions
+3. Check the box "Read and write permissions"
+
+### Configure Targets
+
 Usually we want to build for the most popular targets and the three last NIF versions. NIF versions
 are more stable than OTP versions because they only change after two major releases of OTP.
 
@@ -36,32 +47,77 @@ In summary the build matrix looks like this:
 matrix:
   job:
     # NIF version 2.16
-    - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , nif: "2.16", use-cross: true }
-    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , nif: "2.16", use-cross: true }
-    - { target: aarch64-apple-darwin        , os: macos-10.15  , nif: "2.16" }
-    - { target: x86_64-apple-darwin         , os: macos-10.15  , nif: "2.16" }
-    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04 , nif: "2.16" }
-    - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , nif: "2.16", use-cross: true }
-    - { target: x86_64-pc-windows-gnu       , os: windows-2019 , nif: "2.16" }
-    - { target: x86_64-pc-windows-msvc      , os: windows-2019 , nif: "2.16" }
+    - {
+        target: arm-unknown-linux-gnueabihf,
+        os: ubuntu-20.04,
+        nif: "2.16",
+        use-cross: true,
+      }
+    - {
+        target: aarch64-unknown-linux-gnu,
+        os: ubuntu-20.04,
+        nif: "2.16",
+        use-cross: true,
+      }
+    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.16" }
+    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.16" }
+    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.16" }
+    - {
+        target: x86_64-unknown-linux-musl,
+        os: ubuntu-20.04,
+        nif: "2.16",
+        use-cross: true,
+      }
+    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.16" }
+    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.16" }
     # NIF version 2.15
-    - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , nif: "2.15", use-cross: true }
-    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , nif: "2.15", use-cross: true }
-    - { target: aarch64-apple-darwin        , os: macos-10.15  , nif: "2.15" }
-    - { target: x86_64-apple-darwin         , os: macos-10.15  , nif: "2.15" }
-    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04 , nif: "2.15" }
-    - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , nif: "2.15", use-cross: true }
-    - { target: x86_64-pc-windows-gnu       , os: windows-2019 , nif: "2.15" }
-    - { target: x86_64-pc-windows-msvc      , os: windows-2019 , nif: "2.15" }
+    - {
+        target: arm-unknown-linux-gnueabihf,
+        os: ubuntu-20.04,
+        nif: "2.15",
+        use-cross: true,
+      }
+    - {
+        target: aarch64-unknown-linux-gnu,
+        os: ubuntu-20.04,
+        nif: "2.15",
+        use-cross: true,
+      }
+    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.15" }
+    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.15" }
+    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.15" }
+    - {
+        target: x86_64-unknown-linux-musl,
+        os: ubuntu-20.04,
+        nif: "2.15",
+        use-cross: true,
+      }
+    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.15" }
+    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.15" }
     # NIF version 2.14
-    - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , nif: "2.14", use-cross: true }
-    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , nif: "2.14", use-cross: true }
-    - { target: aarch64-apple-darwin        , os: macos-10.15  , nif: "2.14" }
-    - { target: x86_64-apple-darwin         , os: macos-10.15  , nif: "2.14" }
-    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04 , nif: "2.14" }
-    - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , nif: "2.14", use-cross: true }
-    - { target: x86_64-pc-windows-gnu       , os: windows-2019 , nif: "2.14" }
-    - { target: x86_64-pc-windows-msvc      , os: windows-2019 , nif: "2.14" }
+    - {
+        target: arm-unknown-linux-gnueabihf,
+        os: ubuntu-20.04,
+        nif: "2.14",
+        use-cross: true,
+      }
+    - {
+        target: aarch64-unknown-linux-gnu,
+        os: ubuntu-20.04,
+        nif: "2.14",
+        use-cross: true,
+      }
+    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.14" }
+    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.14" }
+    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.14" }
+    - {
+        target: x86_64-unknown-linux-musl,
+        os: ubuntu-20.04,
+        nif: "2.14",
+        use-cross: true,
+      }
+    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.14" }
+    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.14" }
 ```
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
@@ -146,11 +202,11 @@ You don't need to track this file in your version control system (git or other).
 
 To recap, the suggested flow is the following:
 
-  1. release a new tag
-  2. push the code to your repository with the new tag: `git push origin main --tags`
-  3. wait for all NIFs to be built
-  4. run the `mix rustler_precompiled.download` task (with the flag `--all`)
-  5. release the package to Hex.pm.
+1. release a new tag
+2. push the code to your repository with the new tag: `git push origin main --tags`
+3. wait for all NIFs to be built
+4. run the `mix rustler_precompiled.download` task (with the flag `--all`)
+5. release the package to Hex.pm.
 
 ## Conclusion
 
