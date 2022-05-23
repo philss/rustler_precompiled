@@ -45,79 +45,16 @@ In summary the build matrix looks like this:
 
 ```yaml
 matrix:
+  nif: ["2.16", "2.15", "2.14"]
   job:
-    # NIF version 2.16
-    - {
-        target: arm-unknown-linux-gnueabihf,
-        os: ubuntu-20.04,
-        nif: "2.16",
-        use-cross: true,
-      }
-    - {
-        target: aarch64-unknown-linux-gnu,
-        os: ubuntu-20.04,
-        nif: "2.16",
-        use-cross: true,
-      }
-    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.16" }
-    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.16" }
-    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.16" }
-    - {
-        target: x86_64-unknown-linux-musl,
-        os: ubuntu-20.04,
-        nif: "2.16",
-        use-cross: true,
-      }
-    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.16" }
-    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.16" }
-    # NIF version 2.15
-    - {
-        target: arm-unknown-linux-gnueabihf,
-        os: ubuntu-20.04,
-        nif: "2.15",
-        use-cross: true,
-      }
-    - {
-        target: aarch64-unknown-linux-gnu,
-        os: ubuntu-20.04,
-        nif: "2.15",
-        use-cross: true,
-      }
-    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.15" }
-    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.15" }
-    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.15" }
-    - {
-        target: x86_64-unknown-linux-musl,
-        os: ubuntu-20.04,
-        nif: "2.15",
-        use-cross: true,
-      }
-    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.15" }
-    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.15" }
-    # NIF version 2.14
-    - {
-        target: arm-unknown-linux-gnueabihf,
-        os: ubuntu-20.04,
-        nif: "2.14",
-        use-cross: true,
-      }
-    - {
-        target: aarch64-unknown-linux-gnu,
-        os: ubuntu-20.04,
-        nif: "2.14",
-        use-cross: true,
-      }
-    - { target: aarch64-apple-darwin, os: macos-10.15, nif: "2.14" }
-    - { target: x86_64-apple-darwin, os: macos-10.15, nif: "2.14" }
-    - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, nif: "2.14" }
-    - {
-        target: x86_64-unknown-linux-musl,
-        os: ubuntu-20.04,
-        nif: "2.14",
-        use-cross: true,
-      }
-    - { target: x86_64-pc-windows-gnu, os: windows-2019, nif: "2.14" }
-    - { target: x86_64-pc-windows-msvc, os: windows-2019, nif: "2.14" }
+    - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , use-cross: true }
+    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true }
+    - { target: aarch64-apple-darwin        , os: macos-11      }
+    - { target: x86_64-apple-darwin         , os: macos-11      }
+    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04  }
+    - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , use-cross: true }
+    - { target: x86_64-pc-windows-gnu       , os: windows-2019  }
+    - { target: x86_64-pc-windows-msvc      , os: windows-2019  }
 ```
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
