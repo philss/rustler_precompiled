@@ -203,7 +203,7 @@ field in your `mix.exs`). Otherwise your package **won't work**.
 
 Note: you don't need to track the checksum file in your version control system (git or other).
 
-For an example, refer to the mix.exs file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs) or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/main/mix.exs#L72-L81) library.
+For an example, refer to the mix.exs file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs) or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/723eea63204e43bc9238d2488fd355f17a1e13f2/mix.exs#L65-L72) library.
 
 Tip: use the `mix hex.build --unpack` command to confirm which files are being included (and if the package looks good before publishing).
 
