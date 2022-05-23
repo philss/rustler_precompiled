@@ -3,6 +3,8 @@ defmodule RustlerPrecompiledTest do
 
   import ExUnit.CaptureLog
 
+  @available_targets RustlerPrecompiled.Config.default_targets()
+
   test "target/1" do
     target_system = %{arch: "arm", vendor: "apple", os: "darwin20.3.0"}
 
@@ -12,7 +14,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :darwin}
     }
 
-    assert {:ok, "nif-2.16-aarch64-apple-darwin"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.16-aarch64-apple-darwin"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     target_system = %{arch: "x86_64", vendor: "apple", os: "darwin20.3.0"}
 
@@ -22,7 +25,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :darwin}
     }
 
-    assert {:ok, "nif-2.15-x86_64-apple-darwin"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.15-x86_64-apple-darwin"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     target_system = %{arch: "amd64", vendor: "pc", os: "linux", abi: "gnu"}
 
@@ -32,14 +36,16 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :linux}
     }
 
-    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       config
       | target_system: %{arch: "x86_64", vendor: "unknown", os: "linux", abi: "gnu"}
     }
 
-    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
@@ -47,7 +53,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :linux}
     }
 
-    assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
@@ -55,7 +62,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :linux}
     }
 
-    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
@@ -63,7 +71,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:unix, :darwin}
     }
 
-    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{},
@@ -72,7 +81,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:win32, :nt}
     }
 
-    assert {:ok, "nif-2.14-x86_64-pc-windows-msvc"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.14-x86_64-pc-windows-msvc"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
@@ -81,7 +91,8 @@ defmodule RustlerPrecompiledTest do
       os_type: {:win32, :nt}
     }
 
-    assert {:ok, "nif-2.14-arm-unknown-linux-gnueabihf"} = RustlerPrecompiled.target(config)
+    assert {:ok, "nif-2.14-arm-unknown-linux-gnueabihf"} =
+             RustlerPrecompiled.target(config, @available_targets)
 
     config = %{
       target_system: %{arch: "i686", vendor: "unknown", os: "linux", abi: "gnu"},
@@ -92,7 +103,7 @@ defmodule RustlerPrecompiledTest do
     error_message =
       "precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".\nThe available targets are:\n - aarch64-apple-darwin\n - x86_64-apple-darwin\n - x86_64-unknown-linux-gnu\n - x86_64-unknown-linux-musl\n - arm-unknown-linux-gnueabihf\n - aarch64-unknown-linux-gnu\n - x86_64-pc-windows-msvc\n - x86_64-pc-windows-gnu"
 
-    assert {:error, ^error_message} = RustlerPrecompiled.target(config)
+    assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
   end
 
   test "find_compatible_nif_version/2" do
@@ -226,7 +237,8 @@ defmodule RustlerPrecompiledTest do
               base_url:
                 "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
               version: "0.2.0",
-              crate: "example"
+              crate: "example",
+              targets: @available_targets
             }
 
             assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config)
@@ -270,7 +282,8 @@ defmodule RustlerPrecompiledTest do
               base_cache_dir: tmp_dir,
               base_url: "http://localhost:#{bypass.port}/download",
               version: "0.2.0",
-              crate: "example"
+              crate: "example",
+              targets: @available_targets
             }
 
             assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config)
@@ -310,7 +323,8 @@ defmodule RustlerPrecompiledTest do
             base_cache_dir: tmp_dir,
             base_url: "http://localhost:#{bypass.port}/download",
             version: "0.2.0",
-            crate: "example"
+            crate: "example",
+            targets: @available_targets
           }
 
           assert {:error, error} = RustlerPrecompiled.download_or_reuse_nif_file(config)

@@ -33,15 +33,22 @@ defmodule RustlerPrecompiled do
       be set `true`.
       You can also configure this option by setting an application env like this:
 
-          config :rustler_precompiled, :force_build, your_otp_app: true  
+          config :rustler_precompiled, :force_build, your_otp_app: true
 
       It is important to add the ":rustler" package to your dependencies in order to force
       the build. To do that, just add it to your `mix.exs` file:
 
           {:rustler, ">= 0.0.0", optional: true}
 
-  In case "force build" is used, all options except `:base_url`, `:version` and `:force_build`
-  are going to be passed down to `Rustler`.
+    * `:targets` - A list of targets [supported by
+      Rust](https://doc.rust-lang.org/rustc/platform-support.html) for which
+      precompiled assets are avilable. By default the following targets are
+      configured:
+
+    #{Enum.map_join(RustlerPrecompiled.Config.default_targets(), "\n", &"    - `#{&1}`")}
+
+  In case "force build" is used, all options except `:base_url`, `:version`,
+  `:force_build` and `:targets` are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
   """
   defmacro __using__(opts) do
@@ -110,7 +117,7 @@ defmodule RustlerPrecompiled do
       |> RustlerPrecompiled.Config.new()
 
     if config.force_build? do
-      rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build])
+      rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build, :targets])
 
       {:force_build, rustler_opts}
     else
@@ -137,30 +144,11 @@ defmodule RustlerPrecompiled do
   alias RustlerPrecompiled.Config
   require Logger
 
-  @available_targets ~w(
-    aarch64-apple-darwin
-    x86_64-apple-darwin
-    x86_64-unknown-linux-gnu
-    x86_64-unknown-linux-musl
-    arm-unknown-linux-gnueabihf
-    aarch64-unknown-linux-gnu
-    x86_64-pc-windows-msvc
-    x86_64-pc-windows-gnu
-  )
   @available_nif_versions ~w(2.14 2.15 2.16)
   @checksum_algo :sha256
   @checksum_algorithms [@checksum_algo]
 
   @native_dir "priv/native"
-
-  @doc """
-  List all default available targets.
-  """
-  def available_targets do
-    for target_triple <- @available_targets, nif_version <- @available_nif_versions do
-      "nif-#{nif_version}-#{target_triple}"
-    end
-  end
 
   @doc """
   Returns URLs for NIFs based on its module name.
@@ -175,8 +163,8 @@ defmodule RustlerPrecompiled do
       |> read_map_from_file()
 
     case metadata do
-      %{base_url: base_url, basename: basename, version: version} ->
-        for target <- available_targets() do
+      %{targets: targets, base_url: base_url, basename: basename, version: version} ->
+        for target <- targets do
           # We need to build again the name because each arch is different.
           lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
 
@@ -223,13 +211,13 @@ defmodule RustlerPrecompiled do
   ## Examples
 
       iex> RustlerPrecompiled.target()
-      {:ok, "nif-2.16-x86_64-unknown-linux-gnu"} 
+      {:ok, "nif-2.16-x86_64-unknown-linux-gnu"}
 
       iex> RustlerPrecompiled.target()
       {:ok, "nif-2.15-aarch64-apple-darwin"}
 
   """
-  def target(config \\ target_config()) do
+  def target(config \\ target_config(), available_targets) do
     arch_os =
       case config.os_type do
         {:unix, _} ->
@@ -243,7 +231,7 @@ defmodule RustlerPrecompiled do
             |> system_arch_to_string()
 
           # For when someone is setting "TARGET_*" vars on Windows
-          if existing_target in @available_targets do
+          if existing_target in available_targets do
             existing_target
           else
             # 32 or 64 bits
@@ -264,10 +252,10 @@ defmodule RustlerPrecompiled do
       end
 
     cond do
-      arch_os not in @available_targets ->
+      arch_os not in available_targets ->
         {:error,
          "precompiled NIF is not available for this target: #{inspect(arch_os)}.\n" <>
-           "The available targets are:\n - #{Enum.join(@available_targets, "\n - ")}"}
+           "The available targets are:\n - #{Enum.join(available_targets, "\n - ")}"}
 
       config.nif_version not in @available_nif_versions ->
         {:error,
@@ -424,7 +412,7 @@ defmodule RustlerPrecompiled do
     # NOTE: this `cache_base_dir` is a "private" option used only in tests.
     cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
 
-    with {:ok, target} <- target() do
+    with {:ok, target} <- target(config.targets) do
       basename = config.crate || name
       lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
 
@@ -445,6 +433,7 @@ defmodule RustlerPrecompiled do
         lib_name: lib_name,
         file_name: file_name,
         target: target,
+        targets: config.targets,
         version: version
       }
 
