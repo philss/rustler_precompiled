@@ -1,5 +1,6 @@
 defmodule RustlerPrecompiled.Config do
   @moduledoc false
+
   # This is an internal struct to represent valid config options.
   defstruct [
     :otp_app,
@@ -9,13 +10,28 @@ defmodule RustlerPrecompiled.Config do
     :crate,
     :base_cache_dir,
     :load_data,
-    :force_build?
+    :force_build?,
+    :targets
   ]
+
+  @default_targets ~w(
+    aarch64-apple-darwin
+    x86_64-apple-darwin
+    x86_64-unknown-linux-gnu
+    x86_64-unknown-linux-musl
+    arm-unknown-linux-gnueabihf
+    aarch64-unknown-linux-gnu
+    x86_64-pc-windows-msvc
+    x86_64-pc-windows-gnu
+  )
+
+  def default_targets, do: @default_targets
 
   def new(opts) do
     version = Keyword.fetch!(opts, :version)
     otp_app = opts |> Keyword.fetch!(:otp_app) |> validate_otp_app!()
     base_url = opts |> Keyword.fetch!(:base_url) |> validate_base_url!()
+    targets = opts |> Keyword.get(:targets, @default_targets) |> validate_targets!()
 
     %__MODULE__{
       otp_app: otp_app,
@@ -26,7 +42,8 @@ defmodule RustlerPrecompiled.Config do
       crate: opts[:crate],
       # Default to `0` like `Rustler`.
       load_data: opts[:load_data] || 0,
-      base_cache_dir: opts[:base_cache_dir]
+      base_cache_dir: opts[:base_cache_dir],
+      targets: targets
     }
   end
 
@@ -49,6 +66,16 @@ defmodule RustlerPrecompiled.Config do
 
       {:error, :invalid_uri, error} ->
         raise "`:base_url` for `RustlerPrecompiled` is invalid: #{inspect(to_string(error))}"
+    end
+  end
+
+  defp validate_targets!(nil), do: raise_for_nil_field_value(:targets)
+
+  defp validate_targets!(targets) do
+    if is_list(targets) do
+      targets
+    else
+      raise "`:targets` is required to be a list of targets supported by Rust"
     end
   end
 
