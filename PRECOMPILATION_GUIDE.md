@@ -183,6 +183,8 @@ requirement to force the build is to have Rustler declared as a dependency as we
 
 ## The release flow
 
+### Generating a checksum file
+
 In a scenario where you need to release a Hex package using precompiled NIFs, you first need to
 build the release in the CI, wait for all artifacts to be available and then generate
 the **checksum file** that is **MANDATORY** for your package to work.
@@ -198,7 +200,14 @@ With the module I used for this guide, the command would be:
 The file generated will be named `checksum-Elixir.RustlerPrecompilationExample.Native.exs` and
 it's extremely important that you include this file in your Hex package (by updating the `files:`
 field in your `mix.exs`). Otherwise your package **won't work**.
-You don't need to track this file in your version control system (git or other).
+
+Note: you don't need to track the checksum file in your version control system (git or other).
+
+For an example, refer to the mix.exs file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs) or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/723eea63204e43bc9238d2488fd355f17a1e13f2/mix.exs#L65-L72) library.
+
+Tip: use the `mix hex.build --unpack` command to confirm which files are being included (and if the package looks good before publishing).
+
+### Recommended flow
 
 To recap, the suggested flow is the following:
 
@@ -206,7 +215,7 @@ To recap, the suggested flow is the following:
 2. push the code to your repository with the new tag: `git push origin main --tags`
 3. wait for all NIFs to be built
 4. run the `mix rustler_precompiled.download` task (with the flag `--all`)
-5. release the package to Hex.pm.
+5. release the package to Hex.pm
 
 ## Conclusion
 
