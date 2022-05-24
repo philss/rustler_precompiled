@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2022-05-24
+
+### Fixed
+
+- Fix available targets naming to include the NIF version in the name. It was removed accidentally.
+  Thanks [@adriankumpf](https://github.com/adriankumpf).
+
 ## [0.5.0] - 2022-05-24
 
 ### Added
@@ -67,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/philss/rustler_precompiled/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/philss/rustler_precompiled/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/philss/rustler_precompiled/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/philss/rustler_precompiled/compare/v0.3.0...v0.4.0
