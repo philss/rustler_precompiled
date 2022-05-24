@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-05-24
+
+### Added
+
+- Now it's possible to configure the targets list, based in the [Rust's Plataform Support](https://doc.rust-lang.org/stable/rustc/platform-support.html)
+  list. You can run `rustc --print target-list` to get the full list.
+  Thanks [@adriankumpf](https://github.com/adriankumpf).
+
+### Changed
+
+- The precompilation guide was improved with instructions and suggestions for the `files` key at
+  the project config.
+  Thanks [@nbw](https://github.com/nbw).
+- Now we raise with a different error if the NIF artifact cannot be written when downloading to create
+  the checksum file.
+
 ## [0.4.1] - 2022-04-28
 
 ### Fixed
@@ -24,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add the possibility to skip the download of unavailable NIFs when generating the
-checksum file - thanks [@fahchen](https://github.com/fahchen)
+  checksum file - thanks [@fahchen](https://github.com/fahchen)
 
 ## [0.2.0] - 2022-02-18
 
@@ -51,7 +67,8 @@ checksum file - thanks [@fahchen](https://github.com/fahchen)
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/philss/rustler_precompiled/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/philss/rustler_precompiled/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/philss/rustler_precompiled/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/philss/rustler_precompiled/compare/v0.2.0...v0.3.0
