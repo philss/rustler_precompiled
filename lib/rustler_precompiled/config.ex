@@ -1,6 +1,8 @@
 defmodule RustlerPrecompiled.Config do
   @moduledoc false
 
+  alias __MODULE__.AvailableTargets
+
   # This is an internal struct to represent valid config options.
   defstruct [
     :otp_app,
@@ -71,12 +73,22 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_targets!(nil), do: raise_for_nil_field_value(:targets)
 
-  defp validate_targets!(targets) do
-    if is_list(targets) do
-      targets
-    else
-      raise "`:targets` is required to be a list of targets supported by Rust"
+  defp validate_targets!([_ | _] = targets) do
+    case targets -- AvailableTargets.list() do
+      [] ->
+        targets
+
+      invalid_targets ->
+        raise """
+        `:targets` contains targets that are not supported by Rust:
+
+        #{inspect(invalid_targets, pretty: true)}
+        """
     end
+  end
+
+  defp validate_targets!(_targets) do
+    raise "`:targets` is required to be a list of targets supported by Rust"
   end
 
   defp raise_for_nil_field_value(field) do

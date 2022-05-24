@@ -42,7 +42,7 @@ defmodule RustlerPrecompiled do
 
     * `:targets` - A list of targets [supported by
       Rust](https://doc.rust-lang.org/rustc/platform-support.html) for which
-      precompiled assets are avilable. By default the following targets are
+      precompiled assets are available. By default the following targets are
       configured:
 
     #{Enum.map_join(RustlerPrecompiled.Config.default_targets(), "\n", &"    - `#{&1}`")}

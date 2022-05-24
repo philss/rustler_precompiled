@@ -3,7 +3,7 @@ defmodule RustlerPrecompiled.ConfigTest do
 
   alias RustlerPrecompiled.Config
 
-  test "new/0 sets `force_build?` to true when pre-release version is used" do
+  test "new/1 sets `force_build?` to true when pre-release version is used" do
     config =
       Config.new(
         otp_app: :rustler_precompiled,
@@ -16,7 +16,7 @@ defmodule RustlerPrecompiled.ConfigTest do
     assert config.force_build?
   end
 
-  test "new/0 sets `force_build?` when configured" do
+  test "new/1 sets `force_build?` when configured" do
     config =
       Config.new(
         otp_app: :rustler_precompiled,
@@ -30,7 +30,7 @@ defmodule RustlerPrecompiled.ConfigTest do
     assert config.force_build?
   end
 
-  test "new/0 requireds `force_build` option when is not a pre-release" do
+  test "new/1 requireds `force_build` option when is not a pre-release" do
     assert_raise KeyError, ~r/key :force_build not found/, fn ->
       Config.new(
         otp_app: :rustler_precompiled,
@@ -40,5 +40,63 @@ defmodule RustlerPrecompiled.ConfigTest do
         version: "0.2.0"
       )
     end
+  end
+
+  test "new/1 validates the given targets" do
+    opts = [
+      otp_app: :rustler_precompiled,
+      module: RustlerPrecompilationExample.Native,
+      base_url:
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+      version: "0.2.0-dev"
+    ]
+
+    assert_raise RuntimeError,
+                 "`:targets` is required to be a list of targets supported by Rust",
+                 fn ->
+                   Config.new(opts ++ [targets: "aarch64-unknown-linux-gnu"])
+                 end
+
+    assert_raise RuntimeError,
+                 """
+                 `:targets` contains targets that are not supported by Rust:
+
+                 ["aarch64-unknown-linux-foo"]
+                 """,
+                 fn ->
+                   Config.new(
+                     opts ++
+                       [
+                         targets: [
+                           "aarch64-unknown-linux-gnu",
+                           "aarch64-unknown-linux-gnu_ilp32",
+                           "aarch64-unknown-linux-musl",
+                           "aarch64-unknown-linux-foo"
+                         ]
+                       ]
+                   )
+                 end
+  end
+
+  test "new/1 configures a set of default targets" do
+    config =
+      Config.new(
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0-dev"
+      )
+
+    assert config.targets == [
+             "aarch64-apple-darwin",
+             "x86_64-apple-darwin",
+             "x86_64-unknown-linux-gnu",
+             "x86_64-unknown-linux-musl",
+             "arm-unknown-linux-gnueabihf",
+             "aarch64-unknown-linux-gnu",
+             "x86_64-pc-windows-msvc",
+             "x86_64-pc-windows-gnu"
+           ]
   end
 end
