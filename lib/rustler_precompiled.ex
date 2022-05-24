@@ -673,8 +673,11 @@ defmodule RustlerPrecompiled do
           }
         ]
       else
+        {:file, error} ->
+          raise "could not write downloaded file to disk. Reason: #{inspect(error)}"
+
         {context, result} ->
-          if ignore_unavailable? && context in [:download, :download_result] do
+          if ignore_unavailable? do
             Logger.debug(
               "Skip an unavailable NIF artifact. " <>
                 "Context: #{inspect(context)}. Reason: #{inspect(result)}"
