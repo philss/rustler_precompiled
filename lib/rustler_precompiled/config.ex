@@ -73,7 +73,7 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_targets!(nil), do: raise_for_nil_field_value(:targets)
 
-  defp validate_targets!(targets) when is_list(targets) do
+  defp validate_targets!([_ | _] = targets) do
     case targets -- AvailableTargets.list() do
       [] ->
         targets
