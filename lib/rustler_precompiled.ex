@@ -164,7 +164,9 @@ defmodule RustlerPrecompiled do
 
     case metadata do
       %{targets: targets, base_url: base_url, basename: basename, version: version} ->
-        for target <- targets do
+        for target_triple <- targets, nif_version <- @available_nif_versions do
+          target = "nif-#{nif_version}-#{target_triple}"
+
           # We need to build again the name because each arch is different.
           lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
 
