@@ -136,11 +136,27 @@ With the module I used for this guide, the command would be:
 
 The file generated will be named `checksum-Elixir.RustlerPrecompilationExample.Native.exs` and
 it's extremely important that you include this file in your Hex package (by updating the `files:`
-field in your `mix.exs`). Otherwise your package **won't work**.
+field in your `mix.exs`). Otherwise your package **won't work**. Your `files:` key at your
+package configuration will look like this:
+
+```elixir
+defp package do
+  [
+    files: [
+      "lib",
+      "native",
+      "checksum-*.exs",
+      "mix.exs"
+    ],
+    // ...
+  ]
+end
+```
 
 Note: you don't need to track the checksum file in your version control system (git or other).
 
-For an example, refer to the mix.exs file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs) or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/723eea63204e43bc9238d2488fd355f17a1e13f2/mix.exs#L65-L72) library.
+For an example, refer to the `mix.exs` file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs)
+or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/723eea63204e43bc9238d2488fd355f17a1e13f2/mix.exs#L65-L72) library.
 
 Tip: use the `mix hex.build --unpack` command to confirm which files are being included (and if the package looks good before publishing).
 
@@ -152,7 +168,7 @@ To recap, the suggested flow is the following:
 2. push the code to your repository with the new tag: `git push origin main --tags`
 3. wait for all NIFs to be built
 4. run the `mix rustler_precompiled.download` task (with the flag `--all`)
-5. release the package to Hex.pm
+5. release the package to Hex.pm (make sure your release includes the correct files).
 
 ## Conclusion
 
