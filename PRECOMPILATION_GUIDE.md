@@ -148,7 +148,7 @@ defp package do
       "checksum-*.exs",
       "mix.exs"
     ],
-    // ...
+    # ...
   ]
 end
 ```
