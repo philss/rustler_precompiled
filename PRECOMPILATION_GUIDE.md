@@ -59,6 +59,10 @@ matrix:
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
 
+Some targets are only supported by later versions of `cross`. For those, you might want to
+install `cross` directly from GitHub. You can see an example in [this
+pipeline](https://github.com/kloeckner-i/mail_parser/blob/f4af5083aec73a47f0e41a202ba46a91f60602cf/.github/workflows/release.yml#L101-L105).
+
 ## Additional configuration before build
 
 In our build we are going to cross compile our crate project (the Rust code for our NIF) using
