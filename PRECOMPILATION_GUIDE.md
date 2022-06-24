@@ -92,6 +92,17 @@ lto = true
 In addition to that, we also use a tool called [`cross`](https://github.com/rust-embedded/cross) that
 makes the build easier for some targets (the ones using `use-cross: true` in our example).
 
+We need to tell `cross` to read an environment variable from our "host machine", because `cross` uses
+containers to build our software.
+So you need to create the file `Cross.toml` in the NIF directory with the following content:
+
+```toml
+[build.env]
+passthrough = [
+  "RUSTLER_NIF_VERSION"
+]
+```
+
 ## The Rustler module
 
 We need to tell `RustlerPrecompiled` where to find our NIF files, and we need to tell which version to use.
