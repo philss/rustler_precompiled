@@ -612,7 +612,7 @@ defmodule RustlerPrecompiled do
     end
 
     proxy = System.get_env("HTTPS_PROXY") || System.get_env("https_proxy")
-    
+
     with true <- is_binary(proxy),
          %{host: host, port: port} when is_binary(host) and is_integer(port) <- URI.parse(proxy) do
       Logger.debug("Using HTTPS_PROXY: #{proxy}")
