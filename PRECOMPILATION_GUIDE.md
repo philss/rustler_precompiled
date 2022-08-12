@@ -159,7 +159,9 @@ defp package do
   [
     files: [
       "lib",
-      "native",
+      "native/example/.cargo",
+      "native/example/src",
+      "native/example/Cargo*",
       "checksum-*.exs",
       "mix.exs"
     ],
