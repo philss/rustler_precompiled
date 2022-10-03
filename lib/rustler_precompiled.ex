@@ -219,7 +219,7 @@ defmodule RustlerPrecompiled do
       {:ok, "nif-2.15-aarch64-apple-darwin"}
 
   """
-  def target(config \\ target_config(), available_targets) do
+  def target(config \\ target_config(), available_targets \\ Config.default_targets()) do
     arch_os =
       case config.os_type do
         {:unix, _} ->
@@ -414,7 +414,7 @@ defmodule RustlerPrecompiled do
     # NOTE: this `cache_base_dir` is a "private" option used only in tests.
     cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
 
-    with {:ok, target} <- target(config.targets) do
+    with {:ok, target} <- target(target_config(), config.targets) do
       basename = config.crate || name
       lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
 
