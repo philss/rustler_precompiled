@@ -1,7 +1,7 @@
 defmodule RustlerPrecompiled.MixProject do
   use Mix.Project
 
-  @version "0.5.1"
+  @version "0.5.2"
   @repo "https://github.com/philss/rustler_precompiled"
 
   def project do
@@ -45,6 +45,7 @@ defmodule RustlerPrecompiled.MixProject do
     %{
       licenses: ["Apache-2.0"],
       maintainers: ["Philip Sampaio"],
+      files: ~w(lib mix.exs README.md CHANGELOG.md PRECOMPILATION_GUIDE.md),
       links: %{"GitHub" => @repo}
     }
   end

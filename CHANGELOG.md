@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2022-10-03
+
+### Fixed
+
+- Fix the `target/0` function to use default targets a default argument. This makes the example
+  in the docs work again. Thanks [@jackalcooper](https://github.com/jackalcooper).
+- Only use proxy if it is valid. Thanks [@josevalim](https://github.com/josevalim).
+- Fix the support for PCs running RedHat Linux. Thanks [@Benjamin-Philip](https://github.com/Benjamin-Philip).
+- Improve some points in the docs. Thanks [@whatyouhide](https://github.com/whatyouhide) and [@fabriziosestito](https://github.com/fabriziosestito).
+
 ## [0.5.1] - 2022-05-24
 
 ### Fixed
@@ -74,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/philss/rustler_precompiled/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/philss/rustler_precompiled/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/philss/rustler_precompiled/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/philss/rustler_precompiled/compare/v0.4.0...v0.4.1
