@@ -5,116 +5,136 @@ defmodule RustlerPrecompiledTest do
 
   @available_targets RustlerPrecompiled.Config.default_targets()
 
-  test "target/1" do
-    target_system = %{arch: "arm", vendor: "apple", os: "darwin20.3.0"}
+  describe "target/1" do
+    test "arm 64 bits in an Apple with Darwin-based OS" do
+      target_system = %{arch: "arm", vendor: "apple", os: "darwin20.3.0"}
 
-    config = %{
-      target_system: target_system,
-      nif_version: "2.16",
-      os_type: {:unix, :darwin}
-    }
+      config = %{
+        target_system: target_system,
+        nif_version: "2.16",
+        os_type: {:unix, :darwin}
+      }
 
-    assert {:ok, "nif-2.16-aarch64-apple-darwin"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.16-aarch64-apple-darwin"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    target_system = %{arch: "x86_64", vendor: "apple", os: "darwin20.3.0"}
+    test "x86_64 in an Apple machine with Darwin-based OS" do
+      target_system = %{arch: "x86_64", vendor: "apple", os: "darwin20.3.0"}
 
-    config = %{
-      target_system: target_system,
-      nif_version: "2.15",
-      os_type: {:unix, :darwin}
-    }
+      config = %{
+        target_system: target_system,
+        nif_version: "2.15",
+        os_type: {:unix, :darwin}
+      }
 
-    assert {:ok, "nif-2.15-x86_64-apple-darwin"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.15-x86_64-apple-darwin"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    target_system = %{arch: "x86_64", vendor: "redhat", os: "linux", abi: "gnu"}
+    test "x86_64 in a PC running RedHat Linux" do
+      target_system = %{arch: "x86_64", vendor: "redhat", os: "linux", abi: "gnu"}
 
-    config = %{
-      target_system: target_system,
-      nif_version: "2.14",
-      os_type: {:unix, :linux}
-    }
+      config = %{
+        target_system: target_system,
+        nif_version: "2.14",
+        os_type: {:unix, :linux}
+      }
 
-    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    target_system = %{arch: "amd64", vendor: "pc", os: "linux", abi: "gnu"}
+    test "x86_64 or amd64 in a PC running Linux" do
+      target_system = %{arch: "amd64", vendor: "pc", os: "linux", abi: "gnu"}
 
-    config = %{
-      target_system: target_system,
-      nif_version: "2.14",
-      os_type: {:unix, :linux}
-    }
+      config = %{
+        target_system: target_system,
+        nif_version: "2.14",
+        os_type: {:unix, :linux}
+      }
 
-    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
 
-    config = %{
-      config
-      | target_system: %{arch: "x86_64", vendor: "unknown", os: "linux", abi: "gnu"}
-    }
+      config = %{
+        config
+        | target_system: %{arch: "x86_64", vendor: "unknown", os: "linux", abi: "gnu"}
+      }
 
-    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
-      nif_version: "2.16",
-      os_type: {:unix, :linux}
-    }
+    test "arm running a Linux OS" do
+      config = %{
+        target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
+        nif_version: "2.16",
+        os_type: {:unix, :linux}
+      }
 
-    assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
-      nif_version: "2.16",
-      os_type: {:unix, :linux}
-    }
+    test "arm64 running a Linux OS" do
+      config = %{
+        target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
+        nif_version: "2.16",
+        os_type: {:unix, :linux}
+      }
 
-    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
-      nif_version: "2.16",
-      os_type: {:unix, :darwin}
-    }
+    test "arm64 running in a Darwin-based OS targeting Linux" do
+      config = %{
+        target_system: %{arch: "aarch64", vendor: "unknown", os: "linux", abi: "gnu"},
+        nif_version: "2.16",
+        os_type: {:unix, :darwin}
+      }
 
-    assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{},
-      word_size: 8,
-      nif_version: "2.14",
-      os_type: {:win32, :nt}
-    }
+    test "x86_64 running on Windows with MSVC ABI" do
+      config = %{
+        target_system: %{},
+        word_size: 8,
+        nif_version: "2.14",
+        os_type: {:win32, :nt}
+      }
 
-    assert {:ok, "nif-2.14-x86_64-pc-windows-msvc"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.14-x86_64-pc-windows-msvc"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
-      word_size: 8,
-      nif_version: "2.14",
-      os_type: {:win32, :nt}
-    }
+    test "arm running on windows targeting Linux" do
+      config = %{
+        target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
+        word_size: 8,
+        nif_version: "2.14",
+        os_type: {:win32, :nt}
+      }
 
-    assert {:ok, "nif-2.14-arm-unknown-linux-gnueabihf"} =
-             RustlerPrecompiled.target(config, @available_targets)
+      assert {:ok, "nif-2.14-arm-unknown-linux-gnueabihf"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
 
-    config = %{
-      target_system: %{arch: "i686", vendor: "unknown", os: "linux", abi: "gnu"},
-      nif_version: "2.14",
-      os_type: {:unix, :linux}
-    }
+    test "target not available" do
+      config = %{
+        target_system: %{arch: "i686", vendor: "unknown", os: "linux", abi: "gnu"},
+        nif_version: "2.14",
+        os_type: {:unix, :linux}
+      }
 
-    error_message =
-      "precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".\nThe available targets are:\n - aarch64-apple-darwin\n - x86_64-apple-darwin\n - x86_64-unknown-linux-gnu\n - x86_64-unknown-linux-musl\n - arm-unknown-linux-gnueabihf\n - aarch64-unknown-linux-gnu\n - x86_64-pc-windows-msvc\n - x86_64-pc-windows-gnu"
+      error_message =
+        "precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".\nThe available targets are:\n - aarch64-apple-darwin\n - x86_64-apple-darwin\n - x86_64-unknown-linux-gnu\n - x86_64-unknown-linux-musl\n - arm-unknown-linux-gnueabihf\n - aarch64-unknown-linux-gnu\n - x86_64-pc-windows-msvc\n - x86_64-pc-windows-gnu"
 
-    assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
+      assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
+    end
   end
 
   test "find_compatible_nif_version/2" do
