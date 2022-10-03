@@ -28,6 +28,17 @@ defmodule RustlerPrecompiledTest do
     assert {:ok, "nif-2.15-x86_64-apple-darwin"} =
              RustlerPrecompiled.target(config, @available_targets)
 
+    target_system = %{arch: "x86_64", vendor: "redhat", os: "linux", abi: "gnu"}
+
+    config = %{
+      target_system: target_system,
+      nif_version: "2.14",
+      os_type: {:unix, :linux}
+    }
+
+    assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+             RustlerPrecompiled.target(config, @available_targets)
+
     target_system = %{arch: "amd64", vendor: "pc", os: "linux", abi: "gnu"}
 
     config = %{
