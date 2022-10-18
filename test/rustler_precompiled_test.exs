@@ -272,7 +272,9 @@ defmodule RustlerPrecompiledTest do
               targets: @available_targets
             }
 
-            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config)
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
 
             assert result.load?
             assert {:rustler_precompiled, path} = result.load_from
@@ -317,7 +319,9 @@ defmodule RustlerPrecompiledTest do
               targets: @available_targets
             }
 
-            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config)
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
 
             assert result.load?
             assert {:rustler_precompiled, path} = result.load_from
@@ -358,7 +362,9 @@ defmodule RustlerPrecompiledTest do
             targets: @available_targets
           }
 
-          assert {:error, error} = RustlerPrecompiled.download_or_reuse_nif_file(config)
+          {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+          assert {:error, error} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
 
           assert error =~
                    "the precompiled NIF file does not exist in the checksum file. " <>
@@ -366,6 +372,31 @@ defmodule RustlerPrecompiledTest do
                      "to generate the checksum file."
         end)
       end)
+    end
+  end
+
+  describe "build_metadata/1" do
+    test "builds a valid metadata" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets
+      }
+
+      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.otp_app == :rustler_precompiled
+      assert metadata.basename == "example"
+      assert metadata.crate == "example"
+
+      assert String.ends_with?(metadata.cached_tar_gz, "tar.gz")
+      assert [_ | _] = metadata.targets
+      assert metadata.version == "0.2.0"
+      assert metadata.base_url == config.base_url
     end
   end
 
