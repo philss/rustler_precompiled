@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2022-10-19
+
+### Fixed
+
+- Always write the metadata file in compilation time, so mix tasks can work smoothly.
+
 ## [0.5.2] - 2022-10-03
 
 ### Fixed
@@ -84,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/philss/rustler_precompiled/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/philss/rustler_precompiled/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/philss/rustler_precompiled/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/philss/rustler_precompiled/compare/v0.4.1...v0.5.0
