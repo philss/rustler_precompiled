@@ -387,7 +387,7 @@ defmodule RustlerPrecompiledTest do
         targets: @available_targets
       }
 
-      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
       assert metadata.otp_app == :rustler_precompiled
       assert metadata.basename == "example"
@@ -397,6 +397,22 @@ defmodule RustlerPrecompiledTest do
       assert [_ | _] = metadata.targets
       assert metadata.version == "0.2.0"
       assert metadata.base_url == config.base_url
+    end
+
+    test "returns error when current target is not available" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: ["hexagon-unknown-linux-musl"]
+      }
+
+      assert {:error, error} = RustlerPrecompiled.build_metadata(config)
+      assert error =~ "precompiled NIF is not available for this target: "
+      assert error =~ ".\nThe available targets are:\n - hexagon-unknown-linux-musl"
     end
   end
 

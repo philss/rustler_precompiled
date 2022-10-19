@@ -116,31 +116,36 @@ defmodule RustlerPrecompiled do
       |> Keyword.put_new(:module, module)
       |> RustlerPrecompiled.Config.new()
 
-    {:ok, metadata} = build_metadata(config)
-    # We need to write metadata in order to run Mix tasks.
-    write_metadata(module, metadata)
+    case build_metadata(config) do
+      {:ok, metadata} ->
+        # We need to write metadata in order to run Mix tasks.
+        _ = write_metadata(module, metadata)
 
-    if config.force_build? do
-      rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build, :targets])
+        if config.force_build? do
+          rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build, :targets])
 
-      {:force_build, rustler_opts}
-    else
-      with {:error, precomp_error} <-
-             RustlerPrecompiled.download_or_reuse_nif_file(config, metadata) do
-        message = """
-        Error while downloading precompiled NIF: #{precomp_error}.
+          {:force_build, rustler_opts}
+        else
+          with {:error, precomp_error} <-
+                 RustlerPrecompiled.download_or_reuse_nif_file(config, metadata) do
+            message = """
+            Error while downloading precompiled NIF: #{precomp_error}.
 
-        You can force the project to build from scratch with:
+            You can force the project to build from scratch with:
 
-            config :rustler_precompiled, :force_build, #{config.otp_app}: true
+                config :rustler_precompiled, :force_build, #{config.otp_app}: true
 
-        In order to force the build, you also need to add Rustler as a dependency in your `mix.exs`:
+            In order to force the build, you also need to add Rustler as a dependency in your `mix.exs`:
 
-            {:rustler, ">= 0.0.0", optional: true}
-        """
+                {:rustler, ">= 0.0.0", optional: true}
+            """
 
-        {:error, message}
-      end
+            {:error, message}
+          end
+        end
+
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -467,33 +472,30 @@ defmodule RustlerPrecompiled do
       load_data: config.load_data
     }
 
-    # TODO: add option to only write metadata
-    cond do
-      File.exists?(cached_tar_gz) ->
-        # Remove existing NIF file so we don't have processes using it.
-        # See: https://github.com/rusterlium/rustler/blob/46494d261cbedd3c798f584459e42ab7ee6ea1f4/rustler_mix/lib/rustler/compiler.ex#L134
-        File.rm(lib_file)
+    if File.exists?(cached_tar_gz) do
+      # Remove existing NIF file so we don't have processes using it.
+      # See: https://github.com/rusterlium/rustler/blob/46494d261cbedd3c798f584459e42ab7ee6ea1f4/rustler_mix/lib/rustler/compiler.ex#L134
+      File.rm(lib_file)
 
-        with :ok <- check_file_integrity(cached_tar_gz, nif_module),
-             :ok <- :erl_tar.extract(cached_tar_gz, [:compressed, cwd: Path.dirname(lib_file)]) do
-          Logger.debug("Copying NIF from cache and extracting to #{lib_file}")
-          {:ok, result}
-        end
+      with :ok <- check_file_integrity(cached_tar_gz, nif_module),
+           :ok <- :erl_tar.extract(cached_tar_gz, [:compressed, cwd: Path.dirname(lib_file)]) do
+        Logger.debug("Copying NIF from cache and extracting to #{lib_file}")
+        {:ok, result}
+      end
+    else
+      dirname = Path.dirname(lib_file)
 
-      true ->
-        dirname = Path.dirname(lib_file)
+      with :ok <- File.mkdir_p(cache_dir),
+           :ok <- File.mkdir_p(dirname),
+           {:ok, tar_gz} <- download_tar_gz(base_url, lib_name, cached_tar_gz),
+           :ok <- File.write(cached_tar_gz, tar_gz),
+           :ok <- check_file_integrity(cached_tar_gz, nif_module),
+           :ok <-
+             :erl_tar.extract({:binary, tar_gz}, [:compressed, cwd: Path.dirname(lib_file)]) do
+        Logger.debug("NIF cached at #{cached_tar_gz} and extracted to #{lib_file}")
 
-        with :ok <- File.mkdir_p(cache_dir),
-             :ok <- File.mkdir_p(dirname),
-             {:ok, tar_gz} <- download_tar_gz(base_url, lib_name, cached_tar_gz),
-             :ok <- File.write(cached_tar_gz, tar_gz),
-             :ok <- check_file_integrity(cached_tar_gz, nif_module),
-             :ok <-
-               :erl_tar.extract({:binary, tar_gz}, [:compressed, cwd: Path.dirname(lib_file)]) do
-          Logger.debug("NIF cached at #{cached_tar_gz} and extracted to #{lib_file}")
-
-          {:ok, result}
-        end
+        {:ok, result}
+      end
     end
   end
 
