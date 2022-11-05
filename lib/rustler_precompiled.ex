@@ -411,33 +411,46 @@ defmodule RustlerPrecompiled do
 
   # Calculates metadata based in the TARGET and options
   # from `config`.
+  # In case target cannot be resolved and "force build" is enabled,
+  # returns only the basic metadata.
   @doc false
   def build_metadata(%Config{} = config) do
-    with {:ok, target} <- target(target_config(), config.targets) do
-      basename = config.crate || config.otp_app
-      lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}"
+    base_metadata = %{
+      otp_app: config.otp_app,
+      crate: config.crate,
+      targets: config.targets,
+      version: config.version
+    }
 
-      file_name = lib_name_with_ext(target, lib_name)
+    case target(target_config(), config.targets) do
+      {:ok, target} ->
+        basename = config.crate || config.otp_app
+        lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}"
 
-      # `cache_base_dir` is a "private" option used only in tests.
-      cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
-      cached_tar_gz = Path.join(cache_dir, "#{file_name}.tar.gz")
+        file_name = lib_name_with_ext(target, lib_name)
 
-      base_url = config.base_url
+        # `cache_base_dir` is a "private" option used only in tests.
+        cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
+        cached_tar_gz = Path.join(cache_dir, "#{file_name}.tar.gz")
 
-      {:ok,
-       %{
-         otp_app: config.otp_app,
-         crate: config.crate,
-         cached_tar_gz: cached_tar_gz,
-         base_url: base_url,
-         basename: basename,
-         lib_name: lib_name,
-         file_name: file_name,
-         target: target,
-         targets: config.targets,
-         version: config.version
-       }}
+        base_url = config.base_url
+
+        {:ok,
+         Map.merge(base_metadata, %{
+           cached_tar_gz: cached_tar_gz,
+           base_url: base_url,
+           basename: basename,
+           lib_name: lib_name,
+           file_name: file_name,
+           target: target
+         })}
+
+      {:error, _} = error ->
+        if config.force_build? do
+          {:ok, base_metadata}
+        else
+          error
+        end
     end
   end
 

@@ -414,6 +414,26 @@ defmodule RustlerPrecompiledTest do
       assert error =~ "precompiled NIF is not available for this target: "
       assert error =~ ".\nThe available targets are:\n - hexagon-unknown-linux-musl"
     end
+
+    test "returns a base metadata when target is not available but force build is enabled" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: ["hexagon-unknown-linux-musl"],
+        force_build?: true
+      }
+
+      assert {:ok, base_metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert base_metadata[:otp_app] == :rustler_precompiled
+      assert base_metadata[:crate] == "example"
+      assert base_metadata[:targets] == ["hexagon-unknown-linux-musl"]
+      assert base_metadata[:version] == "0.2.0"
+    end
   end
 
   def in_tmp(tmp_path, function) do
