@@ -415,9 +415,10 @@ defmodule RustlerPrecompiled do
   # returns only the basic metadata.
   @doc false
   def build_metadata(%Config{} = config) do
-    base_metadata = %{
-      otp_app: config.otp_app,
+    basic_metadata = %{
+      base_url: config.base_url,
       crate: config.crate,
+      otp_app: config.otp_app,
       targets: config.targets,
       version: config.version
     }
@@ -433,12 +434,9 @@ defmodule RustlerPrecompiled do
         cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
         cached_tar_gz = Path.join(cache_dir, "#{file_name}.tar.gz")
 
-        base_url = config.base_url
-
         {:ok,
-         Map.merge(base_metadata, %{
+         Map.merge(basic_metadata, %{
            cached_tar_gz: cached_tar_gz,
-           base_url: base_url,
            basename: basename,
            lib_name: lib_name,
            file_name: file_name,
@@ -447,7 +445,7 @@ defmodule RustlerPrecompiled do
 
       {:error, _} = error ->
         if config.force_build? do
-          {:ok, base_metadata}
+          {:ok, basic_metadata}
         else
           error
         end

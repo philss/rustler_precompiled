@@ -433,6 +433,7 @@ defmodule RustlerPrecompiledTest do
       assert base_metadata[:crate] == "example"
       assert base_metadata[:targets] == ["hexagon-unknown-linux-musl"]
       assert base_metadata[:version] == "0.2.0"
+      assert base_metadata[:base_url] == config.base_url
     end
   end
 
