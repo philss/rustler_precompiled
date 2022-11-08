@@ -45,6 +45,19 @@ defmodule RustlerPrecompiledTest do
                RustlerPrecompiled.target(config, @available_targets)
     end
 
+    test "x86_64 in a PC running SUSE Linux" do
+      target_system = %{arch: "x86_64", vendor: "suse", os: "linux", abi: "gnu"}
+
+      config = %{
+        target_system: target_system,
+        nif_version: "2.14",
+        os_type: {:unix, :linux}
+      }
+
+      assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(config, @available_targets)
+    end
+
     test "x86_64 or amd64 in a PC running Linux" do
       target_system = %{arch: "amd64", vendor: "pc", os: "linux", abi: "gnu"}
 
