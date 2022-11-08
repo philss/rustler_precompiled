@@ -391,7 +391,9 @@ defmodule RustlerPrecompiled do
 
       target_system.os =~ "linux" ->
         arch = with "amd64" <- target_system.arch, do: "x86_64"
-        vendor = with vendor when vendor in ~w(pc redhat) <- target_system.vendor, do: "unknown"
+
+        vendor =
+          with vendor when vendor in ~w(pc redhat suse) <- target_system.vendor, do: "unknown"
 
         %{target_system | arch: arch, vendor: vendor}
 
