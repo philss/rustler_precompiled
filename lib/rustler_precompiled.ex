@@ -638,10 +638,11 @@ defmodule RustlerPrecompiled do
     {:ok, _} = Application.ensure_all_started(:inets)
     {:ok, _} = Application.ensure_all_started(:ssl)
 
-    if proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy") do
-      Logger.debug("Using HTTP_PROXY: #{proxy}")
-      %{host: host, port: port} = URI.parse(proxy)
+    proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy")
 
+    with true <- is_binary(proxy),
+         %{host: host, port: port} when is_binary(host) and is_integer(port) <- URI.parse(proxy) do
+      Logger.debug("Using HTTP_PROXY: #{proxy}")
       :httpc.set_options([{:proxy, {{String.to_charlist(host), port}, []}}])
     end
 
