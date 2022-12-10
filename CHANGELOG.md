@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2022-12-10
+
+### Fixed
+
+- Add support for Suse Linux targets. This is a fix to the plataform resolution. Thanks [@fabriziosestito](https://github.com/fabriziosestito).
+- Fix validation of HTTP proxy. This makes the validation similar to the HTTPS proxy. Thanks [@w0rd-driven](https://github.com/w0rd-driven).
+- Map `riscv64` to `riscv64gc` to match Rust naming. Thanks [@fhunleth](https://github.com/fhunleth).
+
 ## [0.5.4] - 2022-11-05
 
 ### Fixed
@@ -96,7 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/philss/rustler_precompiled/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/philss/rustler_precompiled/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/philss/rustler_precompiled/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/philss/rustler_precompiled/compare/v0.5.1...v0.5.2
