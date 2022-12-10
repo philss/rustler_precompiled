@@ -136,6 +136,34 @@ defmodule RustlerPrecompiledTest do
                RustlerPrecompiled.target(config, @available_targets)
     end
 
+    test "riscv64 running a Linux OS" do
+      config = %{
+        target_system: %{arch: "riscv64", vendor: "unknown", os: "linux", abi: "gnu"},
+        nif_version: "2.16",
+        os_type: {:unix, :linux}
+      }
+
+      assert {:ok, "nif-2.16-riscv64gc-unknown-linux-gnu"} =
+               RustlerPrecompiled.target(
+                 config,
+                 @available_targets ++ ["riscv64gc-unknown-linux-gnu"]
+               )
+    end
+
+    test "riscv64 running a Linux OS with MUSL" do
+      config = %{
+        target_system: %{arch: "riscv64", vendor: "unknown", os: "linux", abi: "musl"},
+        nif_version: "2.16",
+        os_type: {:unix, :linux}
+      }
+
+      assert {:ok, "nif-2.16-riscv64gc-unknown-linux-musl"} =
+               RustlerPrecompiled.target(
+                 config,
+                 @available_targets ++ ["riscv64gc-unknown-linux-musl"]
+               )
+    end
+
     test "target not available" do
       config = %{
         target_system: %{arch: "i686", vendor: "unknown", os: "linux", abi: "gnu"},
