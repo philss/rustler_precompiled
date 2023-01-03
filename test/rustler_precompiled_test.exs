@@ -4,6 +4,7 @@ defmodule RustlerPrecompiledTest do
   import ExUnit.CaptureLog
 
   @available_targets RustlerPrecompiled.Config.default_targets()
+  @available_nif_versions RustlerPrecompiled.Config.available_nif_versions()
 
   describe "target/1" do
     test "arm 64 bits in an Apple with Darwin-based OS" do
@@ -16,7 +17,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.16-aarch64-apple-darwin"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "x86_64 in an Apple machine with Darwin-based OS" do
@@ -29,7 +30,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.15-x86_64-apple-darwin"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "x86_64 in a PC running RedHat Linux" do
@@ -42,7 +43,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "x86_64 in a PC running SUSE Linux" do
@@ -55,7 +56,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "x86_64 or amd64 in a PC running Linux" do
@@ -68,7 +69,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
 
       config = %{
         config
@@ -76,7 +77,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-x86_64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "arm running a Linux OS" do
@@ -87,7 +88,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "arm64 running a Linux OS" do
@@ -98,7 +99,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "arm64 running in a Darwin-based OS targeting Linux" do
@@ -109,7 +110,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.16-aarch64-unknown-linux-gnu"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "x86_64 running on Windows with MSVC ABI" do
@@ -121,7 +122,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-x86_64-pc-windows-msvc"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "arm running on windows targeting Linux" do
@@ -133,7 +134,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.14-arm-unknown-linux-gnueabihf"} =
-               RustlerPrecompiled.target(config, @available_targets)
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
 
     test "riscv64 running a Linux OS" do
@@ -146,7 +147,8 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, "nif-2.16-riscv64gc-unknown-linux-gnu"} =
                RustlerPrecompiled.target(
                  config,
-                 @available_targets ++ ["riscv64gc-unknown-linux-gnu"]
+                 @available_targets ++ ["riscv64gc-unknown-linux-gnu"],
+                 @available_nif_versions
                )
     end
 
@@ -160,8 +162,19 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, "nif-2.16-riscv64gc-unknown-linux-musl"} =
                RustlerPrecompiled.target(
                  config,
-                 @available_targets ++ ["riscv64gc-unknown-linux-musl"]
+                 @available_targets ++ ["riscv64gc-unknown-linux-musl"],
+                 @available_nif_versions
                )
+    end
+
+    test "without specified available_targets or available_nif_versions" do
+      config = %{
+        target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
+        nif_version: "2.16",
+        os_type: {:unix, :linux}
+      }
+
+      assert {:ok, "nif-2.16-arm-unknown-linux-gnueabihf"} = RustlerPrecompiled.target(config)
     end
 
     test "target not available" do
@@ -175,6 +188,20 @@ defmodule RustlerPrecompiledTest do
         "precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".\nThe available targets are:\n - aarch64-apple-darwin\n - x86_64-apple-darwin\n - x86_64-unknown-linux-gnu\n - x86_64-unknown-linux-musl\n - arm-unknown-linux-gnueabihf\n - aarch64-unknown-linux-gnu\n - x86_64-pc-windows-msvc\n - x86_64-pc-windows-gnu"
 
       assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
+    end
+
+    test "nif_version not available" do
+      config = %{
+        target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
+        nif_version: "2.10",
+        os_type: {:unix, :linux}
+      }
+
+      error_message =
+        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16"
+
+      assert {:error, ^error_message} =
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
     end
   end
 
@@ -310,7 +337,8 @@ defmodule RustlerPrecompiledTest do
                 "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
               version: "0.2.0",
               crate: "example",
-              targets: @available_targets
+              targets: @available_targets,
+              nif_versions: @available_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -357,7 +385,8 @@ defmodule RustlerPrecompiledTest do
               base_url: "http://localhost:#{bypass.port}/download",
               version: "0.2.0",
               crate: "example",
-              targets: @available_targets
+              targets: @available_targets,
+              nif_versions: @available_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -400,7 +429,8 @@ defmodule RustlerPrecompiledTest do
             base_url: "http://localhost:#{bypass.port}/download",
             version: "0.2.0",
             crate: "example",
-            targets: @available_targets
+            targets: @available_targets,
+            nif_versions: @available_nif_versions
           }
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -425,7 +455,8 @@ defmodule RustlerPrecompiledTest do
           "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
         version: "0.2.0",
         crate: "example",
-        targets: @available_targets
+        targets: @available_targets,
+        nif_versions: @available_nif_versions
       }
 
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -436,6 +467,7 @@ defmodule RustlerPrecompiledTest do
 
       assert String.ends_with?(metadata.cached_tar_gz, "tar.gz")
       assert [_ | _] = metadata.targets
+      assert metadata.nif_versions == @available_nif_versions
       assert metadata.version == "0.2.0"
       assert metadata.base_url == config.base_url
     end
@@ -448,7 +480,8 @@ defmodule RustlerPrecompiledTest do
           "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
         version: "0.2.0",
         crate: "example",
-        targets: ["hexagon-unknown-linux-musl"]
+        targets: ["hexagon-unknown-linux-musl"],
+        nif_versions: @available_nif_versions
       }
 
       assert {:error, error} = RustlerPrecompiled.build_metadata(config)
@@ -465,6 +498,7 @@ defmodule RustlerPrecompiledTest do
         version: "0.2.0",
         crate: "example",
         targets: ["hexagon-unknown-linux-musl"],
+        nif_versions: @available_nif_versions,
         force_build?: true
       }
 
@@ -473,6 +507,47 @@ defmodule RustlerPrecompiledTest do
       assert base_metadata[:otp_app] == :rustler_precompiled
       assert base_metadata[:crate] == "example"
       assert base_metadata[:targets] == ["hexagon-unknown-linux-musl"]
+      assert base_metadata[:nif_versions] == @available_nif_versions
+      assert base_metadata[:version] == "0.2.0"
+      assert base_metadata[:base_url] == config.base_url
+    end
+
+    test "returns error when current nif_version is not available" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        nif_versions: ["future_nif_version"]
+      }
+
+      assert {:error, error} = RustlerPrecompiled.build_metadata(config)
+      assert error =~ "precompiled NIF is not available for this NIF version: "
+      assert error =~ ".\nThe available NIF versions are:\n - future_nif_version"
+    end
+
+    test "returns a base metadata when nif_version is not available but force build is enabled" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        nif_versions: ["future_nif_version"],
+        force_build?: true
+      }
+
+      assert {:ok, base_metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert base_metadata[:otp_app] == :rustler_precompiled
+      assert base_metadata[:crate] == "example"
+      assert base_metadata[:targets] == @available_targets
+      assert base_metadata[:nif_versions] == ["future_nif_version"]
       assert base_metadata[:version] == "0.2.0"
       assert base_metadata[:base_url] == config.base_url
     end
