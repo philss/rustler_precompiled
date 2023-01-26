@@ -19,6 +19,7 @@ defmodule RustlerPrecompiled.Config do
 
   @default_targets ~w(
     aarch64-apple-darwin
+    aarch64-unknown-linux-musl
     x86_64-apple-darwin
     x86_64-unknown-linux-gnu
     x86_64-unknown-linux-musl
@@ -110,7 +111,5 @@ defmodule RustlerPrecompiled.Config do
     raise "`#{inspect(field)}` is required for `RustlerPrecompiled`"
   end
 
-  defp pre_release?(version) do
-    "dev" in Version.parse!(version).pre
-  end
+  defp pre_release?(version), do: "dev" in Version.parse!(version).pre
 end

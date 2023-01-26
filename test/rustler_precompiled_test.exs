@@ -185,7 +185,20 @@ defmodule RustlerPrecompiledTest do
       }
 
       error_message =
-        "precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".\nThe available targets are:\n - aarch64-apple-darwin\n - x86_64-apple-darwin\n - x86_64-unknown-linux-gnu\n - x86_64-unknown-linux-musl\n - arm-unknown-linux-gnueabihf\n - aarch64-unknown-linux-gnu\n - x86_64-pc-windows-msvc\n - x86_64-pc-windows-gnu"
+        """
+        precompiled NIF is not available for this target: \"i686-unknown-linux-gnu\".
+        The available targets are:
+         - aarch64-apple-darwin
+         - aarch64-unknown-linux-musl
+         - x86_64-apple-darwin
+         - x86_64-unknown-linux-gnu
+         - x86_64-unknown-linux-musl
+         - arm-unknown-linux-gnueabihf
+         - aarch64-unknown-linux-gnu
+         - x86_64-pc-windows-msvc
+         - x86_64-pc-windows-gnu
+        """
+        |> String.trim()
 
       assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
     end
