@@ -681,7 +681,9 @@ defmodule RustlerPrecompiled do
       ssl: [
         verify: :verify_peer,
         cacertfile: cacertfile,
-        depth: 2,
+        # We need to increase depth because the default value is 1.
+        # See: https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
+        depth: 3,
         customize_hostname_check: [
           match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
         ]
