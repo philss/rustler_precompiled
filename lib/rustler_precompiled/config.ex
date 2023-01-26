@@ -31,10 +31,12 @@ defmodule RustlerPrecompiled.Config do
   )
 
   @available_nif_versions ~w(2.14 2.15 2.16)
+  @default_nif_versions ~w(2.15 2.16)
 
   def default_targets, do: @default_targets
 
   def available_nif_versions, do: @available_nif_versions
+  def default_nif_versions, do: @default_nif_versions
 
   def new(opts) do
     version = Keyword.fetch!(opts, :version)
@@ -48,7 +50,7 @@ defmodule RustlerPrecompiled.Config do
 
     nif_versions =
       opts
-      |> Keyword.get(:nif_versions, @available_nif_versions)
+      |> Keyword.get(:nif_versions, @default_nif_versions)
       |> validate_list!(:nif_versions, @available_nif_versions)
 
     %__MODULE__{

@@ -47,10 +47,20 @@ defmodule RustlerPrecompiled do
 
     #{Enum.map_join(RustlerPrecompiled.Config.default_targets(), "\n", &"    - `#{&1}`")}
 
-    * `:nif_versions` - A list of OTP nif_versions for which precompiled assets are
-      available. By default the following nif_versions are configured:
+    * `:nif_versions` - A list of OTP NIF versions for which precompiled assets are
+      available. A NIF version is usually compatible with two OTP minor versions, and an older
+      NIF is usually compatible with newer OTPs. The available versions are the following: 
 
-    #{Enum.map_join(RustlerPrecompiled.Config.available_nif_versions(), "\n", &"    - `#{&1}`")}
+      * `2.14` - for OTP 21.
+      * `2.15` - for OTP 22 and 23.
+      * `2.16` - for OTP 24 and 25.
+
+      By default the following NIF versions are configured:
+
+    #{Enum.map_join(RustlerPrecompiled.Config.default_nif_versions(), "\n", &"    - `#{&1}`")}
+
+      Check the compatibiliy table between Elixir and OTP in:
+      https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
 
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.

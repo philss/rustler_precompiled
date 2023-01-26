@@ -161,7 +161,6 @@ defmodule RustlerPrecompiled.ConfigTest do
       )
 
     assert config.nif_versions == [
-             "2.14",
              "2.15",
              "2.16"
            ]
