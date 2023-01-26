@@ -39,13 +39,13 @@ For this guide our targets will be the following:
 
 - OS: Linux, Windows, macOS
 - Architectures: `x86_64`, `aarch64` (ARM 64 bits), `arm`
-- NIF versions: `2.14`, `2.15`, `2.16`.
+- NIF versions: `2.15`, `2.16`.
 
 In summary the build matrix looks like this:
 
 ```yaml
 matrix:
-  nif: ["2.16", "2.15", "2.14"]
+  nif: ["2.16", "2.15"]
   job:
     - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , use-cross: true }
     - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true }
@@ -58,6 +58,8 @@ matrix:
 ```
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
+That workflow is using a GitHub Action especially made for our goal: [philss/rustler-precompiled-action](https://github.com/philss/rustler-precompiled-action).
+The GitHub Action will deal with the installation of `cross` and the build of the project, naming the files in the correct format.
 
 Some targets are only supported by later versions of `cross`. For those, you might want to
 install `cross` directly from GitHub. You can see an example in [this
@@ -66,7 +68,7 @@ pipeline](https://github.com/kloeckner-i/mail_parser/blob/f4af5083aec73a47f0e41a
 ## Additional configuration before build
 
 In our build we are going to cross compile our crate project (the Rust code for our NIF) using
-a variety of targets as we saw in the previous section. For this to work we need to guide the Rust
+a variety of targets, as we saw in the previous section. For this to work we need to guide the Rust
 compiler in some cases by providing additional configuration in the `.cargo/config` file of our project.
 
 Here is an example of that file:
@@ -150,7 +152,7 @@ With the module I used for this guide, the command would be:
     $ mix rustler_precompiled.download RustlerPrecompilationExample.Native --all --print
 
 The file generated will be named `checksum-Elixir.RustlerPrecompilationExample.Native.exs` and
-it's extremely important that you include this file in your Hex package (by updating the `files:`
+it's **extremely important that you include this file in your Hex package** (by updating the `files:`
 field in your `mix.exs`). Otherwise your package **won't work**. Your `files:` key at your
 package configuration will look like this:
 
