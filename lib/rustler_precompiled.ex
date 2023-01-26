@@ -47,8 +47,13 @@ defmodule RustlerPrecompiled do
 
     #{Enum.map_join(RustlerPrecompiled.Config.default_targets(), "\n", &"    - `#{&1}`")}
 
+    * `:nif_versions` - A list of OTP nif_versions for which precompiled assets are
+      available. By default the following nif_versions are configured:
+
+    #{Enum.map_join(RustlerPrecompiled.Config.available_nif_versions(), "\n", &"    - `#{&1}`")}
+
   In case "force build" is used, all options except `:base_url`, `:version`,
-  `:force_build` and `:targets` are going to be passed down to `Rustler`.
+  `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
   """
   defmacro __using__(opts) do
@@ -122,7 +127,8 @@ defmodule RustlerPrecompiled do
         _ = write_metadata(module, metadata)
 
         if config.force_build? do
-          rustler_opts = Keyword.drop(opts, [:base_url, :version, :force_build, :targets])
+          rustler_opts =
+            Keyword.drop(opts, [:base_url, :version, :force_build, :targets, :nif_versions])
 
           {:force_build, rustler_opts}
         else
@@ -154,7 +160,6 @@ defmodule RustlerPrecompiled do
   alias RustlerPrecompiled.Config
   require Logger
 
-  @available_nif_versions ~w(2.14 2.15 2.16)
   @checksum_algo :sha256
   @checksum_algorithms [@checksum_algo]
 
@@ -173,8 +178,14 @@ defmodule RustlerPrecompiled do
       |> read_map_from_file()
 
     case metadata do
-      %{targets: targets, base_url: base_url, basename: basename, version: version} ->
-        for target_triple <- targets, nif_version <- @available_nif_versions do
+      %{
+        targets: targets,
+        base_url: base_url,
+        basename: basename,
+        nif_versions: nif_versions,
+        version: version
+      } ->
+        for target_triple <- targets, nif_version <- nif_versions do
           target = "nif-#{nif_version}-#{target_triple}"
 
           # We need to build again the name because each arch is different.
@@ -229,7 +240,11 @@ defmodule RustlerPrecompiled do
       {:ok, "nif-2.15-aarch64-apple-darwin"}
 
   """
-  def target(config \\ target_config(), available_targets \\ Config.default_targets()) do
+  def target(
+        config \\ target_config(),
+        available_targets \\ Config.default_targets(),
+        available_nif_versions \\ Config.available_nif_versions()
+      ) do
     arch_os =
       case config.os_type do
         {:unix, _} ->
@@ -269,10 +284,10 @@ defmodule RustlerPrecompiled do
          "precompiled NIF is not available for this target: #{inspect(arch_os)}.\n" <>
            "The available targets are:\n - #{Enum.join(available_targets, "\n - ")}"}
 
-      config.nif_version not in @available_nif_versions ->
+      config.nif_version not in available_nif_versions ->
         {:error,
          "precompiled NIF is not available for this NIF version: #{inspect(config.nif_version)}.\n" <>
-           "The available NIF versions are:\n - #{Enum.join(@available_nif_versions, "\n - ")}"}
+           "The available NIF versions are:\n - #{Enum.join(available_nif_versions, "\n - ")}"}
 
       true ->
         {:ok, "nif-#{config.nif_version}-#{arch_os}"}
@@ -283,7 +298,7 @@ defmodule RustlerPrecompiled do
     current_nif_version = :erlang.system_info(:nif_version) |> List.to_string()
 
     nif_version =
-      case find_compatible_nif_version(current_nif_version, @available_nif_versions) do
+      case find_compatible_nif_version(current_nif_version, Config.available_nif_versions()) do
         {:ok, vsn} ->
           vsn
 
@@ -426,10 +441,11 @@ defmodule RustlerPrecompiled do
       crate: config.crate,
       otp_app: config.otp_app,
       targets: config.targets,
+      nif_versions: config.nif_versions,
       version: config.version
     }
 
-    case target(target_config(), config.targets) do
+    case target(target_config(), config.targets, config.nif_versions) do
       {:ok, target} ->
         basename = config.crate || config.otp_app
         lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}"

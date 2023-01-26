@@ -52,14 +52,20 @@ defmodule RustlerPrecompiled.ConfigTest do
     ]
 
     assert_raise RuntimeError,
-                 "`:targets` is required to be a list of targets supported by Rust",
+                 "`:targets` is required to be a list of supported targets",
                  fn ->
                    Config.new(opts ++ [targets: "aarch64-unknown-linux-gnu"])
                  end
 
     assert_raise RuntimeError,
+                 "`:targets` is required for `RustlerPrecompiled`",
+                 fn ->
+                   Config.new(opts ++ [targets: nil])
+                 end
+
+    assert_raise RuntimeError,
                  """
-                 `:targets` contains targets that are not supported by Rust:
+                 `:targets` contains targets that are not supported:
 
                  ["aarch64-unknown-linux-foo"]
                  """,
@@ -97,6 +103,65 @@ defmodule RustlerPrecompiled.ConfigTest do
              "aarch64-unknown-linux-gnu",
              "x86_64-pc-windows-msvc",
              "x86_64-pc-windows-gnu"
+           ]
+  end
+
+  test "new/1 validates the given nif_versions" do
+    opts = [
+      otp_app: :rustler_precompiled,
+      module: RustlerPrecompilationExample.Native,
+      base_url:
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+      version: "0.2.0-dev"
+    ]
+
+    assert_raise RuntimeError,
+                 "`:nif_versions` is required to be a list of supported nif_versions",
+                 fn ->
+                   Config.new(opts ++ [nif_versions: "2.16"])
+                 end
+
+    assert_raise RuntimeError,
+                 "`:nif_versions` is required for `RustlerPrecompiled`",
+                 fn ->
+                   Config.new(opts ++ [nif_versions: nil])
+                 end
+
+    assert_raise RuntimeError,
+                 """
+                 `:nif_versions` contains nif_versions that are not supported:
+
+                 ["2.nonexistent"]
+                 """,
+                 fn ->
+                   Config.new(
+                     opts ++
+                       [
+                         nif_versions: [
+                           "2.14",
+                           "2.15",
+                           "2.16",
+                           "2.nonexistent"
+                         ]
+                       ]
+                   )
+                 end
+  end
+
+  test "new/1 configures a set of default nif_versions" do
+    config =
+      Config.new(
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0-dev"
+      )
+
+    assert config.nif_versions == [
+             "2.14",
+             "2.15",
+             "2.16"
            ]
   end
 end

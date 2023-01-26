@@ -13,7 +13,8 @@ defmodule RustlerPrecompiled.Config do
     :base_cache_dir,
     :load_data,
     :force_build?,
-    :targets
+    :targets,
+    :nif_versions
   ]
 
   @default_targets ~w(
@@ -27,13 +28,26 @@ defmodule RustlerPrecompiled.Config do
     x86_64-pc-windows-gnu
   )
 
+  @available_nif_versions ~w(2.14 2.15 2.16)
+
   def default_targets, do: @default_targets
+
+  def available_nif_versions, do: @available_nif_versions
 
   def new(opts) do
     version = Keyword.fetch!(opts, :version)
     otp_app = opts |> Keyword.fetch!(:otp_app) |> validate_otp_app!()
     base_url = opts |> Keyword.fetch!(:base_url) |> validate_base_url!()
-    targets = opts |> Keyword.get(:targets, @default_targets) |> validate_targets!()
+
+    targets =
+      opts
+      |> Keyword.get(:targets, @default_targets)
+      |> validate_list!(:targets, AvailableTargets.list())
+
+    nif_versions =
+      opts
+      |> Keyword.get(:nif_versions, @available_nif_versions)
+      |> validate_list!(:nif_versions, @available_nif_versions)
 
     %__MODULE__{
       otp_app: otp_app,
@@ -45,7 +59,8 @@ defmodule RustlerPrecompiled.Config do
       # Default to `0` like `Rustler`.
       load_data: opts[:load_data] || 0,
       base_cache_dir: opts[:base_cache_dir],
-      targets: targets
+      targets: targets,
+      nif_versions: nif_versions
     }
   end
 
@@ -71,24 +86,24 @@ defmodule RustlerPrecompiled.Config do
     end
   end
 
-  defp validate_targets!(nil), do: raise_for_nil_field_value(:targets)
+  defp validate_list!(nil, option, _valid_values), do: raise_for_nil_field_value(option)
 
-  defp validate_targets!([_ | _] = targets) do
-    case targets -- AvailableTargets.list() do
+  defp validate_list!([_ | _] = values, option, valid_values) do
+    case values -- valid_values do
       [] ->
-        targets
+        values
 
-      invalid_targets ->
+      invalid_values ->
         raise """
-        `:targets` contains targets that are not supported by Rust:
+        `:#{option}` contains #{option} that are not supported:
 
-        #{inspect(invalid_targets, pretty: true)}
+        #{inspect(invalid_values, pretty: true)}
         """
     end
   end
 
-  defp validate_targets!(_targets) do
-    raise "`:targets` is required to be a list of targets supported by Rust"
+  defp validate_list!(_values, option, _valid_values) do
+    raise "`:#{option}` is required to be a list of supported #{option}"
   end
 
   defp raise_for_nil_field_value(field) do
