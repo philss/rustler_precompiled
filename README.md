@@ -1,12 +1,17 @@
 # Rustler Precompiled
 
 [![CI](https://github.com/philss/rustler_precompiled/actions/workflows/ci.yml/badge.svg)](https://github.com/philss/rustler_precompiled/actions/workflows/ci.yml)
+![Hex.pm](https://img.shields.io/hexpm/v/rustler_precompiled)
 
 This project aims to make the usage of precompiled NIFs easier
 for Elixir projects using [Rustler](https://github.com/rusterlium/rustler).
 
 Read the [blog post](https://dashbit.co/blog/rustler-precompiled) announcing Rustler precompiled, and
 check the [documentation](https://hexdocs.pm/rustler_precompiled) for further details.
+
+There is an [example project using RustlerPrecompiled](https://github.com/philss/rustler_precompilation_example),
+and some projects like [Explorer](https://github.com/elixir-nx/explorer) and
+[Tokenizers](https://github.com/elixir-nx/tokenizers) are using it.
 
 ## Installation
 
