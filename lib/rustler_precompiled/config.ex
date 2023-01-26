@@ -19,14 +19,15 @@ defmodule RustlerPrecompiled.Config do
 
   @default_targets ~w(
     aarch64-apple-darwin
+    aarch64-unknown-linux-gnu
     aarch64-unknown-linux-musl
+    arm-unknown-linux-gnueabihf
+    riscv64gc-unknown-linux-gnu
     x86_64-apple-darwin
+    x86_64-pc-windows-gnu
+    x86_64-pc-windows-msvc
     x86_64-unknown-linux-gnu
     x86_64-unknown-linux-musl
-    arm-unknown-linux-gnueabihf
-    aarch64-unknown-linux-gnu
-    x86_64-pc-windows-msvc
-    x86_64-pc-windows-gnu
   )
 
   @available_nif_versions ~w(2.14 2.15 2.16)
@@ -90,9 +91,11 @@ defmodule RustlerPrecompiled.Config do
   defp validate_list!(nil, option, _valid_values), do: raise_for_nil_field_value(option)
 
   defp validate_list!([_ | _] = values, option, valid_values) do
-    case values -- valid_values do
+    uniq_values = Enum.uniq(values)
+
+    case uniq_values -- valid_values do
       [] ->
-        values
+        uniq_values
 
       invalid_values ->
         raise """
