@@ -65,6 +65,38 @@ defmodule RustlerPrecompiled do
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
+
+  ## Environment variables
+
+  This project reads some system environment variables. They are all optional, but they
+  can change the behaviour of this library at **compile time** of your project.
+
+  They are:
+
+    * `HTTP_PROXY` or `http_proxy` - Sets the HTTP proxy configuration.
+
+    * `HTTPS_PROXY` or `https_proxy` - Sets the HTTPS proxy configuration.
+
+    * `MIX_XDG` - If present, sets the OS as `:linux` for the `:filename.basedir/3` when getting
+      an user cache dir.
+
+    * `TARGET_ARCH` - The CPU target architecture. This is useful for when building your Nerves
+      project, where your host CPU is different from your target CPU.
+
+      Note that Nerves sets this value automatically when building your project.
+
+      Examples: `arm`, `aarch64`, `x86_64`, `riscv64`.
+
+    * `TARGET_ABI` - The target ABI (e.g., `gnueabihf`, `musl`). This is set by Nerves as well.
+
+    * `TARGET_VENDOR` - The target vendor (e.g., `unknown`, `apple`, `pc`). This is **not** set by Nerves. 
+      If any of the `TARGET_` env vars is set, but `TARGET_VENDOR` is empty, then we change the
+      target vendor to `unknown` that is the default value for Linux systems.
+
+    * `TARGET_OS` - The target operational system. This is always `linux` for Nerves.
+
+  For more details about Nerves env vars, see https://hexdocs.pm/nerves/environment-variables.html
+
   """
   defmacro __using__(opts) do
     force =
