@@ -11,9 +11,8 @@ check the [documentation](https://hexdocs.pm/rustler_precompiled) for further de
 
 There is an [example project](https://github.com/philss/rustler_precompilation_example) demonstrating
 the usage of RustlerPrecompiled.
-
 But you can find "real" projects using it two: [Explorer](https://github.com/elixir-nx/explorer) and
-[Tokenizers](https://github.com/elixir-nx/tokenizers) good examples.
+[Tokenizers](https://github.com/elixir-nx/tokenizers) are good examples.
 
 ## Installation
 
@@ -23,7 +22,7 @@ list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:rustler_precompiled, "~> 0.5"}
+    {:rustler_precompiled, "~> 0.6"}
   ]
 end
 ```
