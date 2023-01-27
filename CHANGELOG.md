@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for configuring the NIF versions that the project supports.
   This can be done with the `:nif_versions` config.
 
+- Add support for `castore` version `~> 1.0`.
+
+### Changed
+
 - Add `aarch64-unknown-linux-musl` and `riscv64gc-unknown-linux-gnu` as default targets.
   The first one is common for people running Linux containers that were built with Musl on Apple computers.
   The second one is becoming popular for tiny computers, normally running Nerves.
@@ -22,14 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   For package maintainers: please remember to add these targets to your CI workflow.
   See an example workflow at: https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml
 
-- Add support for `castore` version `~> 1.0`.
-
-### Changed
-
 - Change the depth of SSL peer verification to "3". This should be more compatible with servers.
 
-- Remove version "2.14" from the default NIF versions. This should affect mainly package maintainers,
-  because the NIFs compiled with this version will be ignored.
+- Remove version "2.14" from the default NIF versions. Like the change of default targets,
+  this should only have effect in the moment of release of a new package version.
+  Remember to update your workflow file.
 
 ## [0.5.5] - 2022-12-10
 

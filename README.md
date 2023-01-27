@@ -9,9 +9,11 @@ for Elixir projects using [Rustler](https://github.com/rusterlium/rustler).
 Read the [blog post](https://dashbit.co/blog/rustler-precompiled) announcing Rustler precompiled, and
 check the [documentation](https://hexdocs.pm/rustler_precompiled) for further details.
 
-There is an [example project using RustlerPrecompiled](https://github.com/philss/rustler_precompilation_example),
-and some projects like [Explorer](https://github.com/elixir-nx/explorer) and
-[Tokenizers](https://github.com/elixir-nx/tokenizers) are using it.
+There is an [example project](https://github.com/philss/rustler_precompilation_example) demonstrating
+the usage of RustlerPrecompiled.
+
+But you can find "real" projects using it two: [Explorer](https://github.com/elixir-nx/explorer) and
+[Tokenizers](https://github.com/elixir-nx/tokenizers) good examples.
 
 ## Installation
 
