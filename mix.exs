@@ -19,7 +19,7 @@ defmodule RustlerPrecompiled.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :crypto, :inets, :public_key]
+      extra_applications: [:logger, :crypto, :inets, :ssl]
     ]
   end
 
