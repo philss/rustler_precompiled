@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2023-02-16
+
+### Changed
+
+- Depend on `:ssl` instead of `:public_key` application. Since `:public_key` is started
+  with `:ssl`, this shouldn't break. This change is needed in order to support the upcoming
+  Elixir 1.15.
+
 ## [0.6.0] - 2023-01-27
 
 ### Added
@@ -131,7 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/philss/rustler_precompiled/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/philss/rustler_precompiled/compare/v0.5.5...v0.6.0
 [0.5.5]: https://github.com/philss/rustler_precompiled/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/philss/rustler_precompiled/compare/v0.5.3...v0.5.4
