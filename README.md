@@ -11,7 +11,7 @@ check the [documentation](https://hexdocs.pm/rustler_precompiled) for further de
 
 There is an [example project](https://github.com/philss/rustler_precompilation_example) demonstrating
 the usage of RustlerPrecompiled.
-But you can find "real" projects using it two: [Explorer](https://github.com/elixir-nx/explorer) and
+But you can find "real" projects using it too: [Explorer](https://github.com/elixir-nx/explorer) and
 [Tokenizers](https://github.com/elixir-nx/tokenizers) are good examples.
 
 ## Installation
