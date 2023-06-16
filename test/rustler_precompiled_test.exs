@@ -167,6 +167,19 @@ defmodule RustlerPrecompiledTest do
                )
     end
 
+    test "amd64 running FreeBSD" do
+      target_system = %{arch: "amd64", vendor: "portbld", os: "freebsd13.1"}
+
+      config = %{
+        target_system: target_system,
+        nif_version: "2.16",
+        os_type: {:unix, :freebsd}
+      }
+
+      assert {:ok, "nif-2.16-x86_64-unknown-freebsd"} =
+               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
+    end
+
     test "without specified available_targets or available_nif_versions" do
       config = %{
         target_system: %{arch: "arm", vendor: "unknown", os: "linux", abi: "gnueabihf"},
@@ -198,6 +211,7 @@ defmodule RustlerPrecompiledTest do
          - x86_64-pc-windows-msvc
          - x86_64-unknown-linux-gnu
          - x86_64-unknown-linux-musl
+         - x86_64-unknown-freebsd
         """
         |> String.trim()
 

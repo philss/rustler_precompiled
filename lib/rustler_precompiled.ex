@@ -454,6 +454,13 @@ defmodule RustlerPrecompiled do
 
         %{target_system | arch: arch, vendor: vendor}
 
+      target_system.os =~ "freebsd" ->
+        arch = normalize_linux_arch(target_system.arch)
+
+        vendor = with "portbld" <- target_system.vendor, do: "unknown"
+
+        %{target_system | arch: arch, vendor: vendor, os: "freebsd"}
+
       true ->
         target_system
     end
