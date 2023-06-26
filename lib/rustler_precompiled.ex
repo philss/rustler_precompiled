@@ -814,13 +814,13 @@ defmodule RustlerPrecompiled do
   end
 
   defp retry_attempts(options) do
-    retry? = options[:retry]
+    retry? = Keyword.get(options, :retry, true)
 
-    if retry? or is_nil(retry?) do
-      value = options[:retry_attempts] || 3
+    if retry? do
+      value = Keyword.get(options, :retry_attempts, 3)
 
-      if not is_integer(value) or value < 1,
-        do: raise("attempts should be of at least 1. Got: #{inspect(value)}")
+      if not is_integer(value) or value < 1 or value > 15,
+        do: raise("attempts should be between 1 and 15. Got: #{inspect(value)}")
 
       value
     else
