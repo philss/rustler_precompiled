@@ -30,7 +30,7 @@ defmodule RustlerPrecompiled.ConfigTest do
     assert config.force_build?
   end
 
-  test "new/1 requireds `force_build` option when is not a pre-release" do
+  test "new/1 requires `force_build` option when is not a pre-release" do
     assert_raise KeyError, ~r/key :force_build not found/, fn ->
       Config.new(
         otp_app: :rustler_precompiled,
@@ -165,5 +165,49 @@ defmodule RustlerPrecompiled.ConfigTest do
              "2.15",
              "2.16"
            ]
+  end
+
+  test "new/1 sets a default retry options" do
+    config =
+      Config.new(
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0-dev"
+      )
+
+    assert config.retry
+    assert config.retry_attempts == 3
+  end
+
+  test "new/1 validates retry_attempts option" do
+    opts = [
+      otp_app: :rustler_precompiled,
+      module: RustlerPrecompilationExample.Native,
+      retry_attempts: 4,
+      base_url:
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+      version: "0.2.0-dev"
+    ]
+
+    assert Config.new(opts).retry_attempts == 4
+
+    for n <- 1..15 do
+      opts = Keyword.update!(opts, :retry_attempts, fn _ -> n end)
+      assert Config.new(opts).retry_attempts == n
+    end
+
+    opts = Keyword.update!(opts, :retry_attempts, fn _ -> 16 end)
+    assert_raise RuntimeError, fn -> Config.new(opts) end
+
+    opts = Keyword.update!(opts, :retry_attempts, fn _ -> -1 end)
+    assert_raise RuntimeError, fn -> Config.new(opts) end
+
+    opts = Keyword.update!(opts, :retry_attempts, fn _ -> "invalid" end)
+    assert_raise RuntimeError, fn -> Config.new(opts) end
+
+    opts = Keyword.update!(opts, :retry_attempts, fn _ -> nil end)
+    assert_raise RuntimeError, fn -> Config.new(opts) end
   end
 end

@@ -10,7 +10,7 @@ defmodule RustlerPrecompiled do
 
   ## Example
 
-      defmodule MyNative do
+      defmodule MyApp.MyNative do
         use RustlerPrecompiled,
           otp_app: :my_app,
           crate: "my_app_nif",
@@ -61,6 +61,11 @@ defmodule RustlerPrecompiled do
 
       Check the compatibiliy table between Elixir and OTP in:
       https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
+
+    * `:retry` - A boolean that controls if downloads should be retried upon errors.
+      Defaults to `true`.
+
+    * `:retry_attempts` - The number of retry attempts before giving up. Defaults to `3`.
 
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
@@ -170,7 +175,15 @@ defmodule RustlerPrecompiled do
 
         if config.force_build? do
           rustler_opts =
-            Keyword.drop(opts, [:base_url, :version, :force_build, :targets, :nif_versions])
+            Keyword.drop(opts, [
+              :base_url,
+              :version,
+              :force_build,
+              :targets,
+              :nif_versions,
+              :retry,
+              :retry_attempts
+            ])
 
           {:force_build, rustler_opts}
         else
@@ -566,10 +579,13 @@ defmodule RustlerPrecompiled do
       end
     else
       dirname = Path.dirname(lib_file)
+      tar_gz_url = tar_gz_file_url(base_url, lib_name_with_ext(cached_tar_gz, lib_name))
+
+      attempts = if config.retry, do: config.retry_attempts, else: 1
 
       with :ok <- File.mkdir_p(cache_dir),
            :ok <- File.mkdir_p(dirname),
-           {:ok, tar_gz} <- download_tar_gz(base_url, lib_name, cached_tar_gz),
+           {:ok, tar_gz} <- with_retry(fn -> download_nif_artifact(tar_gz_url) end, attempts),
            :ok <- File.write(cached_tar_gz, tar_gz),
            :ok <- check_file_integrity(cached_tar_gz, nif_module),
            :ok <-
@@ -694,12 +710,6 @@ defmodule RustlerPrecompiled do
     to_string(uri)
   end
 
-  defp download_tar_gz(base_url, lib_name, target_name) do
-    base_url
-    |> tar_gz_file_url(lib_name_with_ext(target_name, lib_name))
-    |> download_nif_artifact()
-  end
-
   defp download_nif_artifact(url) do
     url = String.to_charlist(url)
     Logger.debug("Downloading NIF from #{url}")
@@ -755,14 +765,15 @@ defmodule RustlerPrecompiled do
   @doc false
   def download_nif_artifacts_with_checksums!(urls, options \\ []) do
     ignore_unavailable? = Keyword.get(options, :ignore_unavailable, false)
+    attempts = retry_attempts(options)
 
-    tasks =
-      Task.async_stream(urls, fn url -> {url, download_nif_artifact(url)} end, timeout: :infinity)
+    download_results =
+      for url <- urls, do: {url, with_retry(fn -> download_nif_artifact(url) end, attempts)}
 
     cache_dir = cache_dir("precompiled_nifs")
     :ok = File.mkdir_p(cache_dir)
 
-    Enum.flat_map(tasks, fn {:ok, result} ->
+    Enum.flat_map(download_results, fn result ->
       with {:download, {url, download_result}} <- {:download, result},
            {:download_result, {:ok, body}} <- {:download_result, download_result},
            hash <- :crypto.hash(@checksum_algo, body),
@@ -798,6 +809,42 @@ defmodule RustlerPrecompiled do
             raise "could not finish the download of NIF artifacts. " <>
                     "Context: #{inspect(context)}. Reason: #{inspect(result)}"
           end
+      end
+    end)
+  end
+
+  defp retry_attempts(options) do
+    retry? = options[:retry]
+
+    if retry? or is_nil(retry?) do
+      value = options[:retry_attempts] || 3
+
+      if not is_integer(value) or value < 1,
+        do: raise("attempts should be of at least 1. Got: #{inspect(value)}")
+
+      value
+    else
+      1
+    end
+  end
+
+  defp with_retry(fun, attempts) do
+    task = Task.async(fun)
+
+    Enum.reduce_while(1..attempts, Task.await(task), fn count, partial_result ->
+      case partial_result do
+        {:ok, _} ->
+          {:halt, partial_result}
+
+        err ->
+          Logger.warn("Attempt #{count} failed with #{inspect(err)}")
+
+          wait_in_ms = :rand.uniform(count * 2_000)
+          Process.sleep(wait_in_ms)
+
+          task = Task.async(fun)
+
+          {:cont, Task.await(task)}
       end
     end)
   end

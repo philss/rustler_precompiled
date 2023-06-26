@@ -14,7 +14,9 @@ defmodule RustlerPrecompiled.Config do
     :load_data,
     :force_build?,
     :targets,
-    :nif_versions
+    :nif_versions,
+    :retry,
+    :retry_attempts
   ]
 
   @default_targets ~w(
@@ -65,7 +67,9 @@ defmodule RustlerPrecompiled.Config do
       load_data: opts[:load_data] || 0,
       base_cache_dir: opts[:base_cache_dir],
       targets: targets,
-      nif_versions: nif_versions
+      nif_versions: nif_versions,
+      retry: Keyword.get(opts, :retry, true),
+      retry_attempts: validate_retry_attempts!(Keyword.get(opts, :retry_attempts, 3))
     }
   end
 
@@ -111,6 +115,13 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_list!(_values, option, _valid_values) do
     raise "`:#{option}` is required to be a list of supported #{option}"
+  end
+
+  defp validate_retry_attempts!(nil), do: raise_for_nil_field_value(:retry_attempts)
+  defp validate_retry_attempts!(num) when is_integer(num) and num > 0 and num <= 15, do: num
+
+  defp validate_retry_attempts!(other) do
+    raise "`:retry_attempts` is required to be an integer of value between 1 and 15. Got #{inspect(other)}"
   end
 
   defp raise_for_nil_field_value(field) do

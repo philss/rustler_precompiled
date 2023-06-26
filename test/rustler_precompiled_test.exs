@@ -435,6 +435,68 @@ defmodule RustlerPrecompiledTest do
     end
 
     @tag :tmp_dir
+    test "a project downloading precompiled NIFs with retry", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open()
+      {:ok, agent} = Agent.start_link(fn -> 1 end)
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect(bypass, fn conn ->
+          current_attempt = Agent.get(agent, & &1)
+
+          if current_attempt == 2 do
+            file_name = List.last(conn.path_info)
+            file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+            Plug.Conn.resp(conn, 200, file)
+          else
+            :ok = Agent.update(agent, &(&1 + 1))
+
+            Plug.Conn.resp(conn, 500, "Server is down")
+          end
+        end)
+
+        result =
+          capture_log(fn ->
+            config = %RustlerPrecompiled.Config{
+              otp_app: :rustler_precompiled,
+              module: RustlerPrecompilationExample.Native,
+              base_cache_dir: tmp_dir,
+              base_url: "http://localhost:#{bypass.port}/download",
+              version: "0.2.0",
+              crate: "example",
+              targets: @available_targets,
+              nif_versions: @available_nif_versions
+            }
+
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+
+            assert result.load?
+            assert {:rustler_precompiled, path} = result.load_from
+
+            assert path =~ "priv/native"
+            assert path =~ "example-v0.2.0-nif"
+          end)
+
+        assert Agent.get(agent, & &1) == 2
+
+        assert result =~ "Attempt 1 failed"
+        assert result =~ "Internal Server Error"
+
+        assert result =~ "Downloading"
+        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "NIF cached at"
+      end)
+    end
+
+    @tag :tmp_dir
     test "a project downloading precompiled NIFs without the checksum file", %{
       tmp_dir: tmp_dir,
       nif_fixtures_dir: nif_fixtures_dir
