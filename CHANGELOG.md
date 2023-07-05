@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2023-07-05
+
+### Added
+
+- Add support for FreeBSD as a target.
+
+### Changed
+
+- Remove `:crypto` from the extra applications list, because `:ssl` already includes it.
+
+- Update the guide to mention the new way to select a NIF version in Rustler >= 0.29.
+
 ## [0.6.1] - 2023-02-16
 
 ### Changed
@@ -139,7 +151,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/philss/rustler_precompiled/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/philss/rustler_precompiled/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/philss/rustler_precompiled/compare/v0.5.5...v0.6.0
 [0.5.5]: https://github.com/philss/rustler_precompiled/compare/v0.5.4...v0.5.5

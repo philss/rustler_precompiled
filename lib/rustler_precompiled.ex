@@ -51,9 +51,10 @@ defmodule RustlerPrecompiled do
       available. A NIF version is usually compatible with two OTP minor versions, and an older
       NIF is usually compatible with newer OTPs. The available versions are the following: 
 
-      * `2.14` - for OTP 21.
-      * `2.15` - for OTP 22 and 23.
-      * `2.16` - for OTP 24 and 25.
+      * `2.14` - for OTP 21 and above.
+      * `2.15` - for OTP 22 and above.
+      * `2.16` - for OTP 24 and above.
+      * `2.17` - for OTP 26 and above.
 
       By default the following NIF versions are configured:
 

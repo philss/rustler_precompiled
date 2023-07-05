@@ -32,8 +32,18 @@ repository.
 
 ### Configure Targets
 
-Usually we want to build for the most popular targets and the three last NIF versions. NIF versions
-are more stable than OTP versions because they only change after two major releases of OTP.
+Usually we want to build for the most popular targets and the minimum NIF version supported.
+
+NIF versions are more stable than OTP versions because they usually change only after two major
+releases of OTP. But older versions are compatible with newer versions if they have the same MAJOR
+number. For example, the NIF `2.15` is compatible with `2.16` and `2.17`. So you only need to
+compile for `2.15` if you want to support these versions. But in case any new feature from the
+newer versions is needed, then you can build for both versions as well.
+
+In Rustler - starting from v0.29 -, it's possible to control which version of NIF is active by
+configuring cargo features that have this format: `nif_version_MAJOR_MINOR`. So it's possible
+to define features in your project that depends on Rustler features.
+More details are in the "Additional configuration before build".
 
 For this guide our targets will be the following:
 
@@ -94,8 +104,9 @@ lto = true
 In addition to that, we also use a tool called [`cross`](https://github.com/rust-embedded/cross) that
 makes the build easier for some targets (the ones using `use-cross: true` in our example).
 
-We need to tell `cross` to read an environment variable from our "host machine", because `cross` uses
-containers to build our software.
+For projects using Rustler **before v0.29**, we need to tell `cross` to read an environment variable
+from our "host machine", because `cross` uses containers to build our software.
+
 So you need to create the file `Cross.toml` in the NIF directory with the following content:
 
 ```toml
@@ -104,6 +115,56 @@ passthrough = [
   "RUSTLER_NIF_VERSION"
 ]
 ```
+
+#### Using features to control NIF version in Rustler v0.29 and above
+
+Since Rustler v0.29, it's possible to control which NIF version is active by using cargo features.
+This is a replacement for the `RUSTLER_NIF_VERSION` env var, that is deprecated in v0.30 of
+Rustler.
+
+If your project does not use anything special from newer NIF versions, then you can declare the
+Rustler dependency like this:
+
+```toml
+[dependencies]
+rustler = { version = "0.29", default-features = false, features = ["derive", "nif_version_2_15"] }
+```
+
+And in the workflow file, you would specify the `nif-version: 2.15` as usual.
+
+But in case you want to have newer features from more recent versions of NIF, you can create
+features for your project that are used to activate rustler features. These features should
+follow the same naming from Rustler, because the CI action is going to use that to activate
+the right feature.
+
+Here is an example of how your `Cargo.toml` would look like:
+
+```toml
+[dependencies]
+rustler = { version = "0.29", default-features = false, features = ["derive"] }
+
+# And then, your features.
+[features]
+default = ["nif_version_2_15"]
+nif_version_2_15 = ["rustler/nif_version_2_15"]
+nif_version_2_16 = ["rustler/nif_version_2_16"]
+nif_version_2_17 = ["rustler/nif_version_2_17"]
+```
+
+In your code, you would use these features - like `nif_version_2_17` - to control how your
+code is going to be compiled. You can hide some features behind these features.
+Even if you don't have anything behind these features, you can still introduce them
+if you want to activate an specific NIF version.
+
+But again, normally it's enough to build for the lowest version supported by the OTP version
+that you are targeting.
+
+The available NIF versions are the following:
+
+* `2.14` - for OTP 21 and above.
+* `2.15` - for OTP 22 and above.
+* `2.16` - for OTP 24 and above.
+* `2.17` - for OTP 26 and above.
 
 ## The Rustler module
 
