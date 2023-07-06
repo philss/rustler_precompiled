@@ -8,7 +8,7 @@ defmodule RustlerPrecompiled.MixProject do
     [
       app: :rustler_precompiled,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       description: "Make the usage of precompiled NIFs easier for projects using Rustler",
       package: package(),
