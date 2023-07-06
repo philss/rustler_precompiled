@@ -167,7 +167,7 @@ defmodule RustlerPrecompiled.ConfigTest do
            ]
   end
 
-  test "new/1 sets a default retry options" do
+  test "new/1 sets a default max_retries option" do
     config =
       Config.new(
         otp_app: :rustler_precompiled,
@@ -177,37 +177,36 @@ defmodule RustlerPrecompiled.ConfigTest do
         version: "0.2.0-dev"
       )
 
-    assert config.retry
-    assert config.retry_attempts == 3
+    assert config.max_retries == 3
   end
 
-  test "new/1 validates retry_attempts option" do
+  test "new/1 validates max_retries option" do
     opts = [
       otp_app: :rustler_precompiled,
       module: RustlerPrecompilationExample.Native,
-      retry_attempts: 4,
+      max_retries: 4,
       base_url:
         "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
       version: "0.2.0-dev"
     ]
 
-    assert Config.new(opts).retry_attempts == 4
+    assert Config.new(opts).max_retries == 4
 
     for n <- 1..15 do
-      opts = Keyword.update!(opts, :retry_attempts, fn _ -> n end)
-      assert Config.new(opts).retry_attempts == n
+      opts = Keyword.update!(opts, :max_retries, fn _ -> n end)
+      assert Config.new(opts).max_retries == n
     end
 
-    opts = Keyword.update!(opts, :retry_attempts, fn _ -> 16 end)
+    opts = Keyword.update!(opts, :max_retries, fn _ -> 16 end)
     assert_raise RuntimeError, fn -> Config.new(opts) end
 
-    opts = Keyword.update!(opts, :retry_attempts, fn _ -> -1 end)
+    opts = Keyword.update!(opts, :max_retries, fn _ -> -1 end)
     assert_raise RuntimeError, fn -> Config.new(opts) end
 
-    opts = Keyword.update!(opts, :retry_attempts, fn _ -> "invalid" end)
+    opts = Keyword.update!(opts, :max_retries, fn _ -> "invalid" end)
     assert_raise RuntimeError, fn -> Config.new(opts) end
 
-    opts = Keyword.update!(opts, :retry_attempts, fn _ -> nil end)
+    opts = Keyword.update!(opts, :max_retries, fn _ -> nil end)
     assert_raise RuntimeError, fn -> Config.new(opts) end
   end
 end

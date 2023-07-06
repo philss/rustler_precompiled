@@ -62,10 +62,8 @@ defmodule RustlerPrecompiled do
       Check the compatibiliy table between Elixir and OTP in:
       https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
 
-    * `:retry` - A boolean that controls if downloads should be retried upon errors.
-      Defaults to `true`.
-
-    * `:retry_attempts` - The number of retry attempts before giving up. Defaults to `3`.
+    * `:max_retries` - The maximum of retries before giving up. Defaults to `3`.
+      Retries can be disabled with `0`.
 
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
@@ -181,8 +179,7 @@ defmodule RustlerPrecompiled do
               :force_build,
               :targets,
               :nif_versions,
-              :retry,
-              :retry_attempts
+              :max_retries
             ])
 
           {:force_build, rustler_opts}
@@ -581,11 +578,10 @@ defmodule RustlerPrecompiled do
       dirname = Path.dirname(lib_file)
       tar_gz_url = tar_gz_file_url(base_url, lib_name_with_ext(cached_tar_gz, lib_name))
 
-      attempts = if config.retry, do: config.retry_attempts, else: 1
-
       with :ok <- File.mkdir_p(cache_dir),
            :ok <- File.mkdir_p(dirname),
-           {:ok, tar_gz} <- with_retry(fn -> download_nif_artifact(tar_gz_url) end, attempts),
+           {:ok, tar_gz} <-
+             with_retry(fn -> download_nif_artifact(tar_gz_url) end, config.max_retries),
            :ok <- File.write(cached_tar_gz, tar_gz),
            :ok <- check_file_integrity(cached_tar_gz, nif_module),
            :ok <-
@@ -765,7 +761,7 @@ defmodule RustlerPrecompiled do
   @doc false
   def download_nif_artifacts_with_checksums!(urls, options \\ []) do
     ignore_unavailable? = Keyword.get(options, :ignore_unavailable, false)
-    attempts = retry_attempts(options)
+    attempts = max_retries(options)
 
     download_results =
       for url <- urls, do: {url, with_retry(fn -> download_nif_artifact(url) end, attempts)}
@@ -813,22 +809,16 @@ defmodule RustlerPrecompiled do
     end)
   end
 
-  defp retry_attempts(options) do
-    retry? = Keyword.get(options, :retry, true)
+  defp max_retries(options) do
+    value = Keyword.get(options, :max_retries, 3)
 
-    if retry? do
-      value = Keyword.get(options, :retry_attempts, 3)
+    if value not in 0..15,
+      do: raise("attempts should be between 0 and 15. Got: #{inspect(value)}")
 
-      if value not in 1..15,
-        do: raise("attempts should be between 1 and 15. Got: #{inspect(value)}")
-
-      value
-    else
-      1
-    end
+    value
   end
 
-  defp with_retry(fun, attempts) do
+  defp with_retry(fun, attempts) when attempts in 0..15 do
     task = Task.async(fun)
     first_try = Task.await(task, :infinity)
 
