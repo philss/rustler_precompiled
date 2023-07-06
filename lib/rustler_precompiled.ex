@@ -833,9 +833,7 @@ defmodule RustlerPrecompiled do
           wait_in_ms = :rand.uniform(count * 2_000)
           Process.sleep(wait_in_ms)
 
-          task = Task.async(fun)
-
-          {:cont, Task.await(task, :infinity)}
+          {:cont, fun.()}
       end
     end)
   end
