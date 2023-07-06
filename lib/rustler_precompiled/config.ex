@@ -118,7 +118,7 @@ defmodule RustlerPrecompiled.Config do
   end
 
   defp validate_retry_attempts!(nil), do: raise_for_nil_field_value(:retry_attempts)
-  defp validate_retry_attempts!(num) when is_integer(num) and num > 0 and num <= 15, do: num
+  defp validate_retry_attempts!(num) when num in 0..15, do: num
 
   defp validate_retry_attempts!(other) do
     raise "`:retry_attempts` is required to be an integer of value between 1 and 15. Got #{inspect(other)}"

@@ -819,7 +819,7 @@ defmodule RustlerPrecompiled do
     if retry? do
       value = Keyword.get(options, :retry_attempts, 3)
 
-      if not is_integer(value) or value < 1 or value > 15,
+      if value not in 1..15,
         do: raise("attempts should be between 1 and 15. Got: #{inspect(value)}")
 
       value
