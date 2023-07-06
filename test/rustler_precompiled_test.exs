@@ -229,7 +229,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       error_message =
-        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16"
+        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16\n - 2.17"
 
       assert {:error, ^error_message} =
                RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
