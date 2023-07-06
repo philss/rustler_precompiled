@@ -177,7 +177,11 @@ defmodule RustlerPrecompiledTest do
       }
 
       assert {:ok, "nif-2.16-x86_64-unknown-freebsd"} =
-               RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
+               RustlerPrecompiled.target(
+                 config,
+                 RustlerPrecompiled.Config.available_targets(),
+                 @available_nif_versions
+               )
     end
 
     test "without specified available_targets or available_nif_versions" do
@@ -211,7 +215,6 @@ defmodule RustlerPrecompiledTest do
          - x86_64-pc-windows-msvc
          - x86_64-unknown-linux-gnu
          - x86_64-unknown-linux-musl
-         - x86_64-unknown-freebsd
         """
         |> String.trim()
 

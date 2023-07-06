@@ -51,9 +51,10 @@ defmodule RustlerPrecompiled do
       available. A NIF version is usually compatible with two OTP minor versions, and an older
       NIF is usually compatible with newer OTPs. The available versions are the following: 
 
-      * `2.14` - for OTP 21.
-      * `2.15` - for OTP 22 and 23.
-      * `2.16` - for OTP 24 and 25.
+      * `2.14` - for OTP 21 and above.
+      * `2.15` - for OTP 22 and above.
+      * `2.16` - for OTP 24 and above.
+      * `2.17` - for OTP 26 and above.
 
       By default the following NIF versions are configured:
 
@@ -457,7 +458,7 @@ defmodule RustlerPrecompiled do
         %{target_system | arch: arch, os: "darwin"}
 
       target_system.os =~ "linux" ->
-        arch = normalize_linux_arch(target_system.arch)
+        arch = normalize_arch(target_system.arch)
 
         vendor =
           with vendor when vendor in ~w(pc redhat suse) <- target_system.vendor, do: "unknown"
@@ -465,7 +466,7 @@ defmodule RustlerPrecompiled do
         %{target_system | arch: arch, vendor: vendor}
 
       target_system.os =~ "freebsd" ->
-        arch = normalize_linux_arch(target_system.arch)
+        arch = normalize_arch(target_system.arch)
 
         vendor = with "portbld" <- target_system.vendor, do: "unknown"
 
@@ -476,9 +477,9 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp normalize_linux_arch("amd64"), do: "x86_64"
-  defp normalize_linux_arch("riscv64"), do: "riscv64gc"
-  defp normalize_linux_arch(arch), do: arch
+  defp normalize_arch("amd64"), do: "x86_64"
+  defp normalize_arch("riscv64"), do: "riscv64gc"
+  defp normalize_arch(arch), do: arch
 
   defp system_arch_to_string(system_arch) do
     values =

@@ -1,8 +1,6 @@
 defmodule RustlerPrecompiled.Config do
   @moduledoc false
 
-  alias __MODULE__.AvailableTargets
-
   # This is an internal struct to represent valid config options.
   defstruct [
     :otp_app,
@@ -29,13 +27,13 @@ defmodule RustlerPrecompiled.Config do
     x86_64-pc-windows-msvc
     x86_64-unknown-linux-gnu
     x86_64-unknown-linux-musl
-    x86_64-unknown-freebsd
   )
 
   @available_nif_versions ~w(2.14 2.15 2.16)
   @default_nif_versions ~w(2.15 2.16)
 
   def default_targets, do: @default_targets
+  def available_targets, do: RustlerPrecompiled.Config.AvailableTargets.list()
 
   def available_nif_versions, do: @available_nif_versions
   def default_nif_versions, do: @default_nif_versions
@@ -48,7 +46,7 @@ defmodule RustlerPrecompiled.Config do
     targets =
       opts
       |> Keyword.get(:targets, @default_targets)
-      |> validate_list!(:targets, AvailableTargets.list())
+      |> validate_list!(:targets, available_targets())
 
     nif_versions =
       opts
