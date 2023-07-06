@@ -830,21 +830,22 @@ defmodule RustlerPrecompiled do
 
   defp with_retry(fun, attempts) do
     task = Task.async(fun)
+    first_try = Task.await(task, :infinity)
 
-    Enum.reduce_while(1..attempts//1, Task.await(task), fn count, partial_result ->
+    Enum.reduce_while(1..attempts//1, first_try, fn count, partial_result ->
       case partial_result do
         {:ok, _} ->
           {:halt, partial_result}
 
         err ->
-          Logger.warn("Attempt #{count} failed with #{inspect(err)}")
+          Logger.info("Attempt #{count} failed with #{inspect(err)}")
 
           wait_in_ms = :rand.uniform(count * 2_000)
           Process.sleep(wait_in_ms)
 
           task = Task.async(fun)
 
-          {:cont, Task.await(task)}
+          {:cont, Task.await(task, :infinity)}
       end
     end)
   end
