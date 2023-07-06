@@ -831,7 +831,7 @@ defmodule RustlerPrecompiled do
   defp with_retry(fun, attempts) do
     task = Task.async(fun)
 
-    Enum.reduce_while(1..attempts, Task.await(task), fn count, partial_result ->
+    Enum.reduce_while(1..attempts//1, Task.await(task), fn count, partial_result ->
       case partial_result do
         {:ok, _} ->
           {:halt, partial_result}
