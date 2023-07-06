@@ -12,7 +12,8 @@ defmodule RustlerPrecompiled.Config do
     :load_data,
     :force_build?,
     :targets,
-    :nif_versions
+    :nif_versions,
+    max_retries: 3
   ]
 
   @default_targets ~w(
@@ -63,7 +64,8 @@ defmodule RustlerPrecompiled.Config do
       load_data: opts[:load_data] || 0,
       base_cache_dir: opts[:base_cache_dir],
       targets: targets,
-      nif_versions: nif_versions
+      nif_versions: nif_versions,
+      max_retries: validate_max_retries!(Keyword.get(opts, :max_retries, 3))
     }
   end
 
@@ -109,6 +111,13 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_list!(_values, option, _valid_values) do
     raise "`:#{option}` is required to be a list of supported #{option}"
+  end
+
+  defp validate_max_retries!(nil), do: raise_for_nil_field_value(:max_retries)
+  defp validate_max_retries!(num) when num in 0..15, do: num
+
+  defp validate_max_retries!(other) do
+    raise "`:max_retries` is required to be an integer of value between 0 and 15. Got #{inspect(other)}"
   end
 
   defp raise_for_nil_field_value(field) do
