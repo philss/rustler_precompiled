@@ -500,6 +500,47 @@ defmodule RustlerPrecompiledTest do
     end
 
     @tag :tmp_dir
+    test "a project downloading precompiled NIFs with error and retry disabled", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample
+    } do
+      bypass = Bypass.open()
+      {:ok, agent} = Agent.start_link(fn -> 0 end)
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect(bypass, fn conn ->
+          :ok = Agent.update(agent, &(&1 + 1))
+
+          Plug.Conn.resp(conn, 500, "Server is down")
+        end)
+
+        capture_log(fn ->
+          config = %RustlerPrecompiled.Config{
+            otp_app: :rustler_precompiled,
+            module: RustlerPrecompilationExample.Native,
+            base_cache_dir: tmp_dir,
+            base_url: "http://localhost:#{bypass.port}/download",
+            version: "0.2.0",
+            crate: "example",
+            max_retries: 0,
+            targets: @available_targets,
+            nif_versions: @available_nif_versions
+          }
+
+          {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+          assert {:error, error} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+
+          assert error =~ "Server is down"
+        end)
+
+        assert Agent.get(agent, & &1) == 1
+      end)
+    end
+
+    @tag :tmp_dir
     test "a project downloading precompiled NIFs without the checksum file", %{
       tmp_dir: tmp_dir,
       nif_fixtures_dir: nif_fixtures_dir
