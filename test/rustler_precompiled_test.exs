@@ -552,12 +552,12 @@ defmodule RustlerPrecompiledTest do
         version: "0.2.0",
         crate: "example",
         targets: @available_targets,
-        nif_versions: ["future_nif_version"]
+        nif_versions: ["4.2"]
       }
 
       assert {:error, error} = RustlerPrecompiled.build_metadata(config)
       assert error =~ "precompiled NIF is not available for this NIF version: "
-      assert error =~ ".\nThe available NIF versions are:\n - future_nif_version"
+      assert error =~ ".\nThe available NIF versions are:\n - 4.2"
     end
 
     test "returns a base metadata when nif_version is not available but force build is enabled" do
@@ -569,7 +569,7 @@ defmodule RustlerPrecompiledTest do
         version: "0.2.0",
         crate: "example",
         targets: @available_targets,
-        nif_versions: ["future_nif_version"],
+        nif_versions: ["4.2"],
         force_build?: true
       }
 
@@ -578,9 +578,26 @@ defmodule RustlerPrecompiledTest do
       assert base_metadata[:otp_app] == :rustler_precompiled
       assert base_metadata[:crate] == "example"
       assert base_metadata[:targets] == @available_targets
-      assert base_metadata[:nif_versions] == ["future_nif_version"]
+      assert base_metadata[:nif_versions] == ["4.2"]
       assert base_metadata[:version] == "0.2.0"
       assert base_metadata[:base_url] == config.base_url
+    end
+
+    test "builds a valid metadata with a restrict NIF versions list" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        nif_versions: ["2.15"]
+      }
+
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.nif_versions == ["2.15"]
     end
   end
 

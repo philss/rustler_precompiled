@@ -337,11 +337,11 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp target_config do
+  defp target_config(available_nif_versions \\ Config.available_nif_versions()) do
     current_nif_version = :erlang.system_info(:nif_version) |> List.to_string()
 
     nif_version =
-      case find_compatible_nif_version(current_nif_version, Config.available_nif_versions()) do
+      case find_compatible_nif_version(current_nif_version, available_nif_versions) do
         {:ok, vsn} ->
           vsn
 
@@ -495,7 +495,7 @@ defmodule RustlerPrecompiled do
       version: config.version
     }
 
-    case target(target_config(), config.targets, config.nif_versions) do
+    case target(target_config(config.nif_versions), config.targets, config.nif_versions) do
       {:ok, target} ->
         basename = config.crate || config.otp_app
         lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}"

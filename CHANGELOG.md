@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2023-08-28
+
+### Fixed
+
+- Make sure `:nif_versions` option is respected.
+
+  This is a small bug fix that was blocking the usage of a more
+  restrict list of "NIF versions". For example, if my system is
+  using NIF version 2.16, but I want to be compatible with only
+  version 2.15, this was being ignored, since the algorithm for
+  finding compatible versions was not taking into account this
+  restriction.
+
 ## [0.6.2] - 2023-07-05
 
 ### Added
@@ -151,7 +164,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/philss/rustler_precompiled/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/philss/rustler_precompiled/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/philss/rustler_precompiled/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/philss/rustler_precompiled/compare/v0.5.5...v0.6.0
