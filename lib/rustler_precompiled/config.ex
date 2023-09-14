@@ -13,6 +13,7 @@ defmodule RustlerPrecompiled.Config do
     :force_build?,
     :targets,
     :nif_versions,
+    :variants,
     max_retries: 3
   ]
 
@@ -65,6 +66,7 @@ defmodule RustlerPrecompiled.Config do
       base_cache_dir: opts[:base_cache_dir],
       targets: targets,
       nif_versions: nif_versions,
+      variants: %{},
       max_retries: validate_max_retries!(Keyword.get(opts, :max_retries, 3))
     }
   end

@@ -590,6 +590,7 @@ defmodule RustlerPrecompiledTest do
         version: "0.2.0",
         crate: "example",
         targets: @available_targets,
+        variants: %{},
         nif_versions: @available_nif_versions
       }
 
@@ -604,6 +605,7 @@ defmodule RustlerPrecompiledTest do
       assert metadata.nif_versions == @available_nif_versions
       assert metadata.version == "0.2.0"
       assert metadata.base_url == config.base_url
+      assert metadata.variants == %{}
     end
 
     test "returns error when current target is not available" do
@@ -701,6 +703,64 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
       assert metadata.nif_versions == ["2.15"]
+    end
+
+    test "builds a valid metadata with specified variants" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        variants: %{
+          "x86_64-unknown-linux-gnu" => [
+            old_glibc: fn _config -> true end,
+            legacy_cpus: fn _config -> true end
+          ]
+        },
+        nif_versions: @available_nif_versions
+      }
+
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.variants == %{"x86_64-unknown-linux-gnu" => [:old_glibc, :legacy_cpus]}
+
+      # We need this guard because not every one is running the tests in the same OS/Arch.
+      if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
+        assert String.ends_with?(metadata.lib_name, "--old_glibc")
+        assert String.ends_with?(metadata.file_name, "--old_glibc.so")
+      end
+    end
+
+    test "builds a valid metadata saving the current variant as legacy CPU" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        variants: %{
+          "x86_64-unknown-linux-gnu" => [
+            old_glibc: fn _config -> false end,
+            legacy_cpus: fn _config -> true end
+          ]
+        },
+        nif_versions: @available_nif_versions
+      }
+
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.variants == %{"x86_64-unknown-linux-gnu" => [:old_glibc, :legacy_cpus]}
+
+      # We need this guard because not every one is running the tests in the same OS/Arch.
+      if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
+        assert String.ends_with?(metadata.lib_name, "--legacy_cpus")
+        assert String.ends_with?(metadata.file_name, "--legacy_cpus.so")
+      end
     end
   end
 

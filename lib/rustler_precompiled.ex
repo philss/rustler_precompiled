@@ -66,6 +66,15 @@ defmodule RustlerPrecompiled do
     * `:max_retries` - The maximum of retries before giving up. Defaults to `3`.
       Retries can be disabled with `0`.
 
+    * `:variants` - A map with alternative versions of a given target. This is useful to
+      support specific versions of dependencies, such as an old glibc version, or to support
+      restrict CPU features, like AVX on x86_64.
+
+      The order of variants matters, because the first one that returns `true` is going to be
+      selected. Example: 
+
+          %{"x86_64-unknown-linux-gnu" => [{"old-glibc", fn _config -> has_old_glibc?() end}]}
+
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
@@ -180,7 +189,8 @@ defmodule RustlerPrecompiled do
               :force_build,
               :targets,
               :nif_versions,
-              :max_retries
+              :max_retries,
+              :variants
             ])
 
           {:force_build, rustler_opts}
@@ -501,6 +511,7 @@ defmodule RustlerPrecompiled do
       crate: config.crate,
       otp_app: config.otp_app,
       targets: config.targets,
+      variants: variants_for_metadata(config.variants),
       nif_versions: config.nif_versions,
       version: config.version
     }
@@ -508,7 +519,12 @@ defmodule RustlerPrecompiled do
     case target(target_config(config.nif_versions), config.targets, config.nif_versions) do
       {:ok, target} ->
         basename = config.crate || config.otp_app
-        lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}"
+
+        # Extract the target without the nif-NIF-VERSION part
+        [_, _, os_arch_target] = String.split(target, "-", parts: 3)
+
+        variant = variant_suffix(os_arch_target, config)
+        lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}#{variant}"
 
         file_name = lib_name_with_ext(target, lib_name)
 
@@ -533,6 +549,27 @@ defmodule RustlerPrecompiled do
         end
     end
   end
+
+  defp variants_for_metadata(variants) do
+    variants
+    |> Enum.map(fn {target, values} -> {target, Keyword.keys(values)} end)
+    |> Map.new()
+  end
+
+  defp variant_suffix(target, %{variants: variants} = config) when is_map_key(variants, target) do
+    variants = Map.fetch!(variants, target)
+
+    variant = Enum.find(variants, fn {_name, func} -> func.(config) end)
+
+    if is_nil(variant) do
+      ""
+    else
+      {name, _} = variant
+      "--" <> Atom.to_string(name)
+    end
+  end
+
+  defp variant_suffix(_, _), do: IO.inspect("", label: "none")
 
   # Perform the download or load of the precompiled NIF
   # It will look in the "priv/native/otp_app" first, and if
