@@ -73,7 +73,7 @@ defmodule RustlerPrecompiled do
       The order of variants matters, because the first one that returns `true` is going to be
       selected. Example: 
 
-          %{"x86_64-unknown-linux-gnu" => [{"old-glibc", fn _config -> has_old_glibc?() end}]}
+          %{"x86_64-unknown-linux-gnu" => [old_glibc: fn _config -> has_old_glibc?() end]}
 
   In case "force build" is used, all options except `:base_url`, `:version`,
   `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
@@ -551,25 +551,30 @@ defmodule RustlerPrecompiled do
   end
 
   defp variants_for_metadata(variants) do
-    variants
-    |> Enum.map(fn {target, values} -> {target, Keyword.keys(values)} end)
-    |> Map.new()
+    Map.new(variants, fn {target, values} -> {target, Keyword.keys(values)} end)
   end
 
   defp variant_suffix(target, %{variants: variants} = config) when is_map_key(variants, target) do
     variants = Map.fetch!(variants, target)
 
-    variant = Enum.find(variants, fn {_name, func} -> func.(config) end)
+    callback = fn {_name, func} ->
+      if is_function(func, 1) do
+        func.(config)
+      else
+        func.()
+      end
+    end
 
-    if is_nil(variant) do
-      ""
-    else
-      {name, _} = variant
-      "--" <> Atom.to_string(name)
+    case Enum.find(variants, callback) do
+      {name, _} ->
+        "--" <> Atom.to_string(name)
+
+      nil ->
+        ""
     end
   end
 
-  defp variant_suffix(_, _), do: IO.inspect("", label: "none")
+  defp variant_suffix(_, _), do: ""
 
   # Perform the download or load of the precompiled NIF
   # It will look in the "priv/native/otp_app" first, and if
