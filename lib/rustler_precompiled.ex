@@ -235,11 +235,23 @@ defmodule RustlerPrecompiled do
   is stored in a metadata file.
   """
   def available_nif_urls(nif_module) when is_atom(nif_module) do
-    metadata =
-      nif_module
-      |> metadata_file()
-      |> read_map_from_file()
+    nif_module
+    |> metadata_file()
+    |> read_map_from_file()
+    |> nif_urls_from_metadata()
+    |> case do
+      {:ok, urls} ->
+        urls
 
+      {:error, wrong_meta} ->
+        raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>
+                "Please compile the project again with: `mix compile --force` " <>
+                "Metadata found: #{inspect(wrong_meta, limit: :infinity, pretty: true)}"
+    end
+  end
+
+  @doc false
+  def nif_urls_from_metadata(metadata) when is_map(metadata) do
     case metadata do
       %{
         targets: targets,
@@ -261,11 +273,10 @@ defmodule RustlerPrecompiled do
             ]
           end
 
-        List.flatten(all_tar_gzs)
+        {:ok, List.flatten(all_tar_gzs)}
 
-      _ ->
-        raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>
-                "Please compile the project again with: `mix compile --force`"
+      wrong_meta ->
+        {:error, wrong_meta}
     end
   end
 
