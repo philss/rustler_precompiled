@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `:max_retries` option, to control how many times we should try
+  to download a NIF artifact. By default it is going to try 3 times.
+  To disable this feature, use the value `0`.
+
+- Add support for variants. This is a feature that enables building
+  for the same target with multiple configurations. It can support
+  different features or OS dependencies. The selection is done in
+  compile time.
+
 ## [0.6.3] - 2023-08-28
 
 ### Fixed
