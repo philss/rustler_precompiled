@@ -266,11 +266,9 @@ defmodule RustlerPrecompiled do
 
             # We need to build again the name because each arch is different.
             lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
+            file_name = lib_name_with_ext(target_triple, lib_name)
 
-            [
-              tar_gz_file_url(base_url, lib_name_with_ext(target_triple, lib_name))
-              | maybe_variants_tar_gz_urls(metadata[:variants], base_url, target_triple, lib_name)
-            ]
+            tar_gz_urls(base_url, file_name, target_triple, metadata[:variants])
           end
 
         {:ok, List.flatten(all_tar_gzs)}
@@ -312,20 +310,21 @@ defmodule RustlerPrecompiled do
       %{base_url: base_url, file_name: file_name} ->
         target_triple = target_triple_from_nif_target(metadata[:target])
 
-        variants =
-          maybe_variants_tar_gz_urls(
-            metadata[:variants],
-            base_url,
-            target_triple,
-            metadata[:lib_name]
-          )
-
-        [tar_gz_file_url(base_url, file_name) | variants]
+        tar_gz_urls(base_url, file_name, target_triple, metadata[:variants])
 
       _ ->
         raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>
                 "Please compile the project again with: `mix compile --force`"
     end
+  end
+
+  defp tar_gz_urls(base_url, file_name, target_triple, variants) do
+    [lib_name, _] = String.split(file_name, ".", parts: 2)
+
+    [
+      tar_gz_file_url(base_url, file_name)
+      | maybe_variants_tar_gz_urls(variants, base_url, target_triple, lib_name)
+    ]
   end
 
   @doc """
@@ -599,7 +598,7 @@ defmodule RustlerPrecompiled do
 
   # Extract the target without the nif-NIF-VERSION part
   defp target_triple_from_nif_target(nif_target) do
-    [_, _, triple] = String.split(nif_target, "-", parts: 3)
+    ["nif", _version, triple] = String.split(nif_target, "-", parts: 3)
     triple
   end
 
