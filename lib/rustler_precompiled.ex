@@ -297,11 +297,12 @@ defmodule RustlerPrecompiled do
   defp maybe_variants_tar_gz_urls(_, _, _, _), do: []
 
   @doc """
-  Returns the file URL to be downloaded for current target.
+  Returns the file URLs to be downloaded for current target.
 
+  It is in the plural because a target may have some variants for it.
   It receives the NIF module.
   """
-  def current_target_nif_url(nif_module) when is_atom(nif_module) do
+  def current_target_nif_urls(nif_module) when is_atom(nif_module) do
     metadata =
       nif_module
       |> metadata_file()
@@ -309,7 +310,17 @@ defmodule RustlerPrecompiled do
 
     case metadata do
       %{base_url: base_url, file_name: file_name} ->
-        tar_gz_file_url(base_url, file_name)
+        target_triple = target_triple_from_nif_target(metadata[:target])
+
+        variants =
+          maybe_variants_tar_gz_urls(
+            metadata[:variants],
+            base_url,
+            target_triple,
+            metadata[:lib_name]
+          )
+
+        [tar_gz_file_url(base_url, file_name) | variants]
 
       _ ->
         raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>

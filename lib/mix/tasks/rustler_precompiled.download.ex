@@ -39,7 +39,7 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
           RustlerPrecompiled.available_nif_urls(module)
 
         Keyword.get(options, :only_local) ->
-          [RustlerPrecompiled.current_target_nif_url(module)]
+          RustlerPrecompiled.current_target_nif_urls(module)
 
         true ->
           raise "you need to specify either \"--all\" or \"--only-local\" flags"
