@@ -590,6 +590,7 @@ defmodule RustlerPrecompiledTest do
         version: "0.2.0",
         crate: "example",
         targets: @available_targets,
+        variants: %{},
         nif_versions: @available_nif_versions
       }
 
@@ -604,6 +605,7 @@ defmodule RustlerPrecompiledTest do
       assert metadata.nif_versions == @available_nif_versions
       assert metadata.version == "0.2.0"
       assert metadata.base_url == config.base_url
+      assert metadata.variants == %{}
     end
 
     test "returns error when current target is not available" do
@@ -701,6 +703,163 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
       assert metadata.nif_versions == ["2.15"]
+    end
+
+    test "builds a valid metadata with specified variants" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        variants: %{
+          "x86_64-unknown-linux-gnu" => [
+            old_glibc: fn _config -> true end,
+            legacy_cpus: fn _config -> true end
+          ]
+        },
+        nif_versions: @available_nif_versions
+      }
+
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.variants == %{"x86_64-unknown-linux-gnu" => [:old_glibc, :legacy_cpus]}
+
+      # We need this guard because not every one is running the tests in the same OS/Arch.
+      if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
+        assert String.ends_with?(metadata.lib_name, "--old_glibc")
+        assert String.ends_with?(metadata.file_name, "--old_glibc.so")
+      end
+    end
+
+    test "builds a valid metadata saving the current variant as legacy CPU" do
+      config = %RustlerPrecompiled.Config{
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0",
+        crate: "example",
+        targets: @available_targets,
+        variants: %{
+          "x86_64-unknown-linux-gnu" => [
+            old_glibc: fn _config -> false end,
+            legacy_cpus: fn _config -> true end
+          ]
+        },
+        nif_versions: @available_nif_versions
+      }
+
+      assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert metadata.variants == %{"x86_64-unknown-linux-gnu" => [:old_glibc, :legacy_cpus]}
+
+      if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
+        assert String.ends_with?(metadata.lib_name, "--legacy_cpus")
+        assert String.ends_with?(metadata.file_name, "--legacy_cpus.so")
+      end
+    end
+  end
+
+  describe "nif_urls_from_metadata/1" do
+    test "builds a list of tar gz urls" do
+      base_url =
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0"
+
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url: base_url,
+          version: "0.2.0",
+          crate: "example",
+          force_build: false,
+          targets: @available_targets,
+          nif_versions: @available_nif_versions
+        )
+
+      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
+
+      assert length(nif_urls) == length(@available_targets) * length(@available_nif_versions)
+
+      for nif_url <- nif_urls do
+        assert String.starts_with?(nif_url, base_url)
+        assert String.ends_with?(nif_url, ".tar.gz")
+      end
+    end
+
+    test "builds a list of tar gz urls and its variants" do
+      base_url =
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0"
+
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url: base_url,
+          version: "0.2.0",
+          crate: "example",
+          force_build: false,
+          targets: @available_targets,
+          variants: %{
+            "x86_64-unknown-linux-gnu" => [
+              old_glibc: fn -> false end,
+              legacy_cpus: fn _config -> true end
+            ]
+          },
+          nif_versions: @available_nif_versions
+        )
+
+      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+      assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
+
+      # NIF versions multiplied by 2 new variants.
+      variants_count = 6
+
+      assert length(nif_urls) ==
+               length(@available_targets) * length(@available_nif_versions) + variants_count
+
+      for nif_url <- nif_urls do
+        assert String.starts_with?(nif_url, base_url)
+        assert String.ends_with?(nif_url, ".tar.gz")
+      end
+
+      with_variants = Enum.filter(nif_urls, &(&1 =~ "--"))
+      assert length(with_variants) == variants_count
+
+      for url <- with_variants do
+        [_rest, variant] = String.split(url, "--", parts: 2)
+        [variant, _rest] = String.split(variant, ".", parts: 2)
+
+        assert variant in ["old_glibc", "legacy_cpus"]
+      end
+    end
+
+    test "does not build list of tar gz urls due to missing metadata field" do
+      base_url =
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0"
+
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url: base_url,
+          version: "0.2.0",
+          crate: "example",
+          force_build: false,
+          targets: @available_targets,
+          nif_versions: @available_nif_versions
+        )
+
+      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+      metadata = Map.drop(metadata, [:version])
+
+      assert {:error, ^metadata} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
     end
   end
 

@@ -13,6 +13,7 @@ defmodule RustlerPrecompiled.Config do
     :force_build?,
     :targets,
     :nif_versions,
+    variants: %{},
     max_retries: 3
   ]
 
@@ -65,6 +66,7 @@ defmodule RustlerPrecompiled.Config do
       base_cache_dir: opts[:base_cache_dir],
       targets: targets,
       nif_versions: nif_versions,
+      variants: validate_variants!(targets, Keyword.get(opts, :variants, %{})),
       max_retries: validate_max_retries!(Keyword.get(opts, :max_retries, 3))
     }
   end
@@ -125,4 +127,30 @@ defmodule RustlerPrecompiled.Config do
   end
 
   defp pre_release?(version), do: "dev" in Version.parse!(version).pre
+
+  defp validate_variants!(_, nil), do: %{}
+
+  defp validate_variants!(targets, variants) when is_map(variants) do
+    variants_targets = Map.keys(variants)
+
+    for target <- variants_targets do
+      if target not in targets do
+        raise "`:variants` contains a target that is not in the list of valid targets: #{inspect(target)}"
+      end
+
+      possibilities = Map.fetch!(variants, target)
+
+      for {name, fun} <- possibilities do
+        if not is_atom(name) do
+          raise "`:variants` expects a keyword list as values, but found a key that is not an atom: #{inspect(name)}"
+        end
+
+        if not (is_function(fun, 0) or is_function(fun, 1)) do
+          raise "`:variants` expects a keyword list as values with functions to detect if a given variant is to be activated"
+        end
+      end
+    end
+
+    variants
+  end
 end

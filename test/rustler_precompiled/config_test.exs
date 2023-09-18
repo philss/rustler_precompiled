@@ -208,4 +208,54 @@ defmodule RustlerPrecompiled.ConfigTest do
     opts = Keyword.update!(opts, :max_retries, fn _ -> nil end)
     assert_raise RuntimeError, fn -> Config.new(opts) end
   end
+
+  test "new/1 validates variants" do
+    variants = %{"x86_64-unknown-linux-gnu" => [old_glibc: fn _config -> true end]}
+
+    opts = [
+      otp_app: :rustler_precompiled,
+      module: RustlerPrecompilationExample.Native,
+      base_url:
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+      variants: variants,
+      version: "0.2.0-dev"
+    ]
+
+    assert Config.new(opts).variants == variants
+
+    zero_arity_variants = %{"x86_64-unknown-linux-gnu" => [old_glibc: fn -> true end]}
+    opts = Keyword.update!(opts, :variants, fn _ -> zero_arity_variants end)
+
+    assert Config.new(opts).variants == zero_arity_variants
+
+    opts = Keyword.update!(opts, :variants, fn _ -> nil end)
+    assert Config.new(opts).variants == %{}
+
+    invalid_target_in_variants = %{"x86_64-unknown-lizzard-hurd" => [old_glibc: fn -> true end]}
+    opts = Keyword.update!(opts, :variants, fn _ -> invalid_target_in_variants end)
+
+    error_msg =
+      ~s|`:variants` contains a target that is not in the list of valid targets: "x86_64-unknown-lizzard-hurd"|
+
+    assert_raise RuntimeError, error_msg, fn -> Config.new(opts) end
+
+    more_than_one_arity_variants = %{
+      "x86_64-unknown-linux-gnu" => [old_glibc: fn _config, _foo -> true end]
+    }
+
+    opts = Keyword.update!(opts, :variants, fn _ -> more_than_one_arity_variants end)
+
+    error_msg =
+      "`:variants` expects a keyword list as values with functions to detect if a given variant is to be activated"
+
+    assert_raise RuntimeError, error_msg, fn -> Config.new(opts) end
+
+    variants_without_keywords = %{"x86_64-unknown-linux-gnu" => [{"old_glibc", fn -> true end}]}
+    opts = Keyword.update!(opts, :variants, fn _ -> variants_without_keywords end)
+
+    error_msg =
+      ~s|`:variants` expects a keyword list as values, but found a key that is not an atom: "old_glibc"|
+
+    assert_raise RuntimeError, error_msg, fn -> Config.new(opts) end
+  end
 end
