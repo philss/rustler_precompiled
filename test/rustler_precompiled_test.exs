@@ -5,6 +5,7 @@ defmodule RustlerPrecompiledTest do
 
   @available_targets RustlerPrecompiled.Config.default_targets()
   @available_nif_versions RustlerPrecompiled.Config.available_nif_versions()
+  @default_nif_versions RustlerPrecompiled.Config.default_nif_versions()
 
   describe "target/1" do
     test "arm 64 bits in an Apple with Darwin-based OS" do
@@ -369,7 +370,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -417,7 +418,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -474,7 +475,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -526,7 +527,7 @@ defmodule RustlerPrecompiledTest do
             crate: "example",
             max_retries: 0,
             targets: @available_targets,
-            nif_versions: @available_nif_versions
+            nif_versions: @default_nif_versions
           }
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -564,7 +565,7 @@ defmodule RustlerPrecompiledTest do
             version: "0.2.0",
             crate: "example",
             targets: @available_targets,
-            nif_versions: @available_nif_versions
+            nif_versions: @default_nif_versions
           }
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
