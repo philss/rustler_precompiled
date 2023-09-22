@@ -819,7 +819,7 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
 
       # NIF versions multiplied by 2 new variants.
-      variants_count = 6
+      variants_count = 8
 
       assert length(nif_urls) ==
                length(@available_targets) * length(@available_nif_versions) + variants_count
