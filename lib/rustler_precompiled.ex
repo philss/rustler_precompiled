@@ -71,12 +71,12 @@ defmodule RustlerPrecompiled do
       restrict CPU features, like AVX on x86_64.
 
       The order of variants matters, because the first one that returns `true` is going to be
-      selected. Example: 
+      selected. Example:
 
           %{"x86_64-unknown-linux-gnu" => [old_glibc: fn _config -> has_old_glibc?() end]}
 
-  In case "force build" is used, all options except `:base_url`, `:version`,
-  `:force_build`, `:nif_versions`, and `:targets` are going to be passed down to `Rustler`.
+  In case "force build" is used, all options except the ones use by RustlerPrecompiled
+  are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
 
   ## Environment variables

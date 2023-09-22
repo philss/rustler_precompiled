@@ -5,6 +5,7 @@ defmodule RustlerPrecompiledTest do
 
   @available_targets RustlerPrecompiled.Config.default_targets()
   @available_nif_versions RustlerPrecompiled.Config.available_nif_versions()
+  @default_nif_versions RustlerPrecompiled.Config.default_nif_versions()
 
   describe "target/1" do
     test "arm 64 bits in an Apple with Darwin-based OS" do
@@ -229,7 +230,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       error_message =
-        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16"
+        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16\n - 2.17"
 
       assert {:error, ^error_message} =
                RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
@@ -369,7 +370,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -417,7 +418,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -474,7 +475,7 @@ defmodule RustlerPrecompiledTest do
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
-              nif_versions: @available_nif_versions
+              nif_versions: @default_nif_versions
             }
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -526,7 +527,7 @@ defmodule RustlerPrecompiledTest do
             crate: "example",
             max_retries: 0,
             targets: @available_targets,
-            nif_versions: @available_nif_versions
+            nif_versions: @default_nif_versions
           }
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -564,7 +565,7 @@ defmodule RustlerPrecompiledTest do
             version: "0.2.0",
             crate: "example",
             targets: @available_targets,
-            nif_versions: @available_nif_versions
+            nif_versions: @default_nif_versions
           }
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
@@ -819,7 +820,7 @@ defmodule RustlerPrecompiledTest do
       assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
 
       # NIF versions multiplied by 2 new variants.
-      variants_count = 6
+      variants_count = 8
 
       assert length(nif_urls) ==
                length(@available_targets) * length(@available_nif_versions) + variants_count
