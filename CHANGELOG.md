@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2023-09-22
+
 ### Added
 
 - Add `:max_retries` option, to control how many times we should try
@@ -17,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the same target with multiple configurations. It can support
   different features or OS dependencies. The selection is done in
   compile time.
+
+### Changed
+
+- Change default list of NIF versions to only include the version `2.15`.
+  This is because most of the users won't need to activate newer versions,
+  unless they use features from those versions.
+
+  This is going to simplify and speed up the release process for most of the
+  projects.
 
 ## [0.6.3] - 2023-08-28
 
@@ -175,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/philss/rustler_precompiled/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/philss/rustler_precompiled/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/philss/rustler_precompiled/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/philss/rustler_precompiled/compare/v0.6.0...v0.6.1
