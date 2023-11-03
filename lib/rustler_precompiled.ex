@@ -319,7 +319,12 @@ defmodule RustlerPrecompiled do
   end
 
   defp tar_gz_urls(base_url, file_name, target_triple, variants) do
-    [lib_name, _] = String.split(file_name, ".", parts: 2)
+    [lib_name, _] =
+      file_name
+      |> String.reverse()
+      |> String.split(".", parts: 2)
+      |> Enum.map(&String.reverse/1)
+      |> Enum.reverse()
 
     [
       tar_gz_file_url(base_url, file_name)
