@@ -765,34 +765,6 @@ defmodule RustlerPrecompiledTest do
   end
 
   describe "nif_urls_from_metadata/1" do
-    test "builds a list of tar gz urls" do
-      base_url =
-        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0"
-
-      config =
-        RustlerPrecompiled.Config.new(
-          otp_app: :rustler_precompiled,
-          module: RustlerPrecompilationExample.Native,
-          base_url: base_url,
-          version: "0.2.0",
-          crate: "example",
-          force_build: false,
-          targets: @available_targets,
-          nif_versions: @available_nif_versions
-        )
-
-      {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
-
-      assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
-
-      assert length(nif_urls) == length(@available_targets) * length(@available_nif_versions)
-
-      for nif_url <- nif_urls do
-        assert String.starts_with?(nif_url, base_url)
-        assert String.ends_with?(nif_url, ".tar.gz")
-      end
-    end
-
     test "builds a list of tar gz urls and its variants" do
       base_url =
         "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0"
@@ -819,26 +791,63 @@ defmodule RustlerPrecompiledTest do
 
       assert {:ok, nif_urls} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
 
-      # NIF versions multiplied by 2 new variants.
-      variants_count = 8
+      nif_versions_count = length(@available_nif_versions)
+      targets_count = length(@available_targets)
+      variants_count = 2
 
-      assert length(nif_urls) ==
-               length(@available_targets) * length(@available_nif_versions) + variants_count
+      assert length(nif_urls) == nif_versions_count * (targets_count + variants_count)
 
-      for nif_url <- nif_urls do
-        assert String.starts_with?(nif_url, base_url)
-        assert String.ends_with?(nif_url, ".tar.gz")
-      end
-
-      with_variants = Enum.filter(nif_urls, &(&1 =~ "--"))
-      assert length(with_variants) == variants_count
-
-      for url <- with_variants do
-        [_rest, variant] = String.split(url, "--", parts: 2)
-        [variant, _rest] = String.split(variant, ".", parts: 2)
-
-        assert variant in ["old_glibc", "legacy_cpus"]
-      end
+      assert Enum.sort(nif_urls) == [
+        "example-v0.2.0-nif-2.14-x86_64-pc-windows-gnu.dll.tar.gz",
+        "example-v0.2.0-nif-2.14-x86_64-pc-windows-msvc.dll.tar.gz",
+        "example-v0.2.0-nif-2.15-x86_64-pc-windows-gnu.dll.tar.gz",
+        "example-v0.2.0-nif-2.15-x86_64-pc-windows-msvc.dll.tar.gz",
+        "example-v0.2.0-nif-2.16-x86_64-pc-windows-gnu.dll.tar.gz",
+        "example-v0.2.0-nif-2.16-x86_64-pc-windows-msvc.dll.tar.gz",
+        "example-v0.2.0-nif-2.17-x86_64-pc-windows-gnu.dll.tar.gz",
+        "example-v0.2.0-nif-2.17-x86_64-pc-windows-msvc.dll.tar.gz",
+        "libexample-v0.2.0-nif-2.14-aarch64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-aarch64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-aarch64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-arm-unknown-linux-gnueabihf.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-riscv64gc-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-x86_64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-x86_64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.14-x86_64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-aarch64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-aarch64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-arm-unknown-linux-gnueabihf.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-riscv64gc-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-x86_64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.15-x86_64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-aarch64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-aarch64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-aarch64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-arm-unknown-linux-gnueabihf.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-riscv64gc-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-x86_64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-x86_64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.16-x86_64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-aarch64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-aarch64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-aarch64-unknown-linux-musl.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-arm-unknown-linux-gnueabihf.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-riscv64gc-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-x86_64-apple-darwin.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu.so.tar.gz",
+        "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-musl.so.tar.gz"
+      ]
+      |> Enum.map(fn file_name -> "#{base_url}/#{file_name}" end)
     end
 
     test "does not build list of tar gz urls due to missing metadata field" do
