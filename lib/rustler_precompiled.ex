@@ -262,13 +262,14 @@ defmodule RustlerPrecompiled do
       } ->
         all_tar_gzs =
           for target_triple <- targets, nif_version <- nif_versions do
-            target = "nif-#{nif_version}-#{target_triple}"
-
-            # We need to build again the name because each arch is different.
-            lib_name = "#{lib_prefix(target)}#{basename}-v#{version}-#{target}"
-            file_name = lib_name_with_ext(target_triple, lib_name)
-
-            tar_gz_urls(base_url, file_name, target_triple, metadata[:variants])
+            tar_gz_urls(
+              base_url,
+              basename,
+              version,
+              nif_version,
+              target_triple,
+              metadata[:variants]
+            )
           end
 
         {:ok, List.flatten(all_tar_gzs)}
@@ -307,10 +308,17 @@ defmodule RustlerPrecompiled do
       |> read_map_from_file()
 
     case metadata do
-      %{base_url: base_url, file_name: file_name} ->
-        target_triple = target_triple_from_nif_target(metadata[:target])
+      %{base_url: base_url, target: target} ->
+        [nif_version, target_triple] = parts_from_nif_target(target)
 
-        tar_gz_urls(base_url, file_name, target_triple, metadata[:variants])
+        tar_gz_urls(
+          base_url,
+          metadata[:basename],
+          metadata[:version],
+          nif_version,
+          target_triple,
+          metadata[:variants]
+        )
 
       _ ->
         raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>
@@ -318,11 +326,11 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp tar_gz_urls(base_url, file_name, target_triple, variants) do
-    [lib_name, _] = String.split(file_name, ".", parts: 2)
+  defp tar_gz_urls(base_url, basename, version, nif_version, target_triple, variants) do
+    lib_name = lib_name(basename, version, nif_version, target_triple)
 
     [
-      tar_gz_file_url(base_url, file_name)
+      tar_gz_file_url(base_url, lib_name_with_ext(target_triple, lib_name))
       | maybe_variants_tar_gz_urls(variants, base_url, target_triple, lib_name)
     ]
   end
@@ -563,10 +571,10 @@ defmodule RustlerPrecompiled do
       {:ok, target} ->
         basename = config.crate || config.otp_app
 
-        target_triple = target_triple_from_nif_target(target)
+        [nif_version, target_triple] = parts_from_nif_target(target)
 
-        variant = variant_suffix(target_triple, config)
-        lib_name = "#{lib_prefix(target)}#{basename}-v#{config.version}-#{target}#{variant}"
+        lib_name =
+          "#{lib_name(basename, config.version, nif_version, target_triple)}#{variant_suffix(target_triple, config)}"
 
         file_name = lib_name_with_ext(target, lib_name)
 
@@ -597,9 +605,9 @@ defmodule RustlerPrecompiled do
   end
 
   # Extract the target without the nif-NIF-VERSION part
-  defp target_triple_from_nif_target(nif_target) do
-    ["nif", _version, triple] = String.split(nif_target, "-", parts: 3)
-    triple
+  defp parts_from_nif_target(nif_target) do
+    ["nif", nif_version, triple] = String.split(nif_target, "-", parts: 3)
+    [nif_version, triple]
   end
 
   defp variant_suffix(target, %{variants: variants} = config) when is_map_key(variants, target) do
@@ -773,6 +781,10 @@ defmodule RustlerPrecompiled do
     else
       "lib"
     end
+  end
+
+  defp lib_name(basename, version, nif_version, target_triple) do
+    "#{lib_prefix(target_triple)}#{basename}-v#{version}-nif-#{nif_version}-#{target_triple}"
   end
 
   defp lib_name_with_ext(target, lib_name) do
