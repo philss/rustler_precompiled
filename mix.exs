@@ -1,7 +1,7 @@
 defmodule RustlerPrecompiled.MixProject do
   use Mix.Project
 
-  @version "0.7.0"
+  @version "0.7.1"
   @repo "https://github.com/philss/rustler_precompiled"
 
   def project do
