@@ -190,6 +190,7 @@ defmodule RustlerPrecompiled do
         # We need to write metadata in order to run Mix tasks.
         with {:error, error} <- write_metadata(module, metadata) do
           require Logger
+
           Logger.warning(
             "Cannot write metadata file for module #{inspect(module)}. Reason: #{inspect(error)}. " <>
               "This is only an issue if you need to use the rustler_precompiled mix tasks for publishing a package."
