@@ -108,6 +108,15 @@ defmodule RustlerPrecompiled do
 
     * `TARGET_OS` - The target operational system. This is always `linux` for Nerves.
 
+    * `RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH` - The global cache path directory. If set, it will ignore
+      the default cache path resolution, thus ignoring `MIX_XDG`, and will try to fetch the artifacts
+      from that path. In case the desired artifact is not found, a download is going to start.
+
+      This variable is important for systems that cannot perform a download at compile time, like inside
+      NixOS. It will require people to previously download the artifacts to that path.
+
+      Note that all packages using `RustlerPrecompiled` will be affected by this env var.
+
   For more details about Nerves env vars, see https://hexdocs.pm/nerves/environment-variables.html
 
   """
@@ -179,7 +188,13 @@ defmodule RustlerPrecompiled do
     case build_metadata(config) do
       {:ok, metadata} ->
         # We need to write metadata in order to run Mix tasks.
-        _ = write_metadata(module, metadata)
+        with {:error, error} <- write_metadata(module, metadata) do
+          require Logger
+          Logger.warning(
+            "Cannot write metadata file for module #{inspect(module)}. Reason: #{inspect(error)}. " <>
+              "This is only an issue if you need to use the rustler_precompiled mix tasks for publishing a package."
+          )
+        end
 
         if config.force_build? do
           rustler_opts =
@@ -761,8 +776,18 @@ defmodule RustlerPrecompiled do
   end
 
   defp cache_dir(sub_dir) do
-    cache_opts = if System.get_env("MIX_XDG"), do: %{os: :linux}, else: %{}
-    :filename.basedir(:user_cache, Path.join("rustler_precompiled", sub_dir), cache_opts)
+    global_cache_path = System.get_env("RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH")
+
+    if global_cache_path do
+      Logger.info(
+        "Using global cache for rustler precompiled artifacts. Path: #{global_cache_path}"
+      )
+
+      global_cache_path
+    else
+      cache_opts = if System.get_env("MIX_XDG"), do: %{os: :linux}, else: %{}
+      :filename.basedir(:user_cache, Path.join("rustler_precompiled", sub_dir), cache_opts)
+    end
   end
 
   # This arity is only used in test context. It should be private because
@@ -961,14 +986,14 @@ defmodule RustlerPrecompiled do
     metadata_file = metadata_file(nif_module)
     existing = read_map_from_file(metadata_file)
 
-    unless Map.equal?(metadata, existing) do
+    if Map.equal?(metadata, existing) do
+      :ok
+    else
       dir = Path.dirname(metadata_file)
       :ok = File.mkdir_p(dir)
 
-      File.write!(metadata_file, inspect(metadata, limit: :infinity, pretty: true))
+      File.write(metadata_file, inspect(metadata, limit: :infinity, pretty: true))
     end
-
-    :ok
   end
 
   defp metadata_file(nif_module) when is_atom(nif_module) do
