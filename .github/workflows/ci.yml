@@ -22,15 +22,19 @@ jobs:
               elixir: 1.15
               otp: 26
             lint: lint
+          - pair:
+              elixir: 1.17
+              otp: 27
+            lint: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{matrix.pair.otp}}
           elixir-version: ${{matrix.pair.elixir}}
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             deps
