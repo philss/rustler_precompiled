@@ -538,7 +538,8 @@ defmodule RustlerPrecompiled do
 
     # Only replace vendor if remains the same but some other env changed the config.
     if original_sys_arch != updated_system_arch and
-         original_sys_arch.vendor == updated_system_arch.vendor do
+         original_sys_arch.vendor == updated_system_arch.vendor and
+         updated_system_arch.os == "linux" do
       Map.put(updated_system_arch, :vendor, "unknown")
     else
       updated_system_arch

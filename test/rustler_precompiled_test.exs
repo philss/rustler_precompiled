@@ -253,43 +253,105 @@ defmodule RustlerPrecompiledTest do
     assert RustlerPrecompiled.find_compatible_nif_version("2.13", ["2.14"]) == :error
   end
 
-  test "maybe_override_with_env_vars/2" do
-    target_system = %{
-      arch: "x86_64",
-      vendor: "apple",
-      os: "darwin20.3.0"
-    }
+  describe "maybe_override_with_env_vars/2" do
+    test "apple host without target env vars" do
+      host_system = %{
+        arch: "x86_64",
+        vendor: "apple",
+        os: "darwin20.3.0"
+      }
 
-    assert RustlerPrecompiled.maybe_override_with_env_vars(target_system, fn _ -> nil end) ==
-             target_system
-
-    env_with_targets = fn
-      "TARGET_OS" -> "linux"
-      "TARGET_ARCH" -> "aarch64"
-      "TARGET_ABI" -> "gnu"
-      _ -> nil
+      assert RustlerPrecompiled.maybe_override_with_env_vars(host_system, fn _ -> nil end) ==
+               host_system
     end
 
-    assert RustlerPrecompiled.maybe_override_with_env_vars(target_system, env_with_targets) == %{
-             arch: "aarch64",
-             vendor: "unknown",
-             os: "linux",
-             abi: "gnu"
-           }
+    test "apple host and linux target" do
+      host_system = %{
+        arch: "x86_64",
+        vendor: "apple",
+        os: "darwin20.3.0"
+      }
 
-    env_with_targets = fn
-      "TARGET_OS" -> "freebsd"
-      "TARGET_ARCH" -> "arm"
-      "TARGET_ABI" -> "musl"
-      "TARGET_VENDOR" -> "ecorp"
+      env_with_targets = fn
+        "TARGET_OS" -> "linux"
+        "TARGET_ARCH" -> "aarch64"
+        "TARGET_ABI" -> "gnu"
+        _ -> nil
+      end
+
+      assert RustlerPrecompiled.maybe_override_with_env_vars(host_system, env_with_targets) == %{
+               arch: "aarch64",
+               vendor: "unknown",
+               os: "linux",
+               abi: "gnu"
+             }
     end
 
-    assert RustlerPrecompiled.maybe_override_with_env_vars(target_system, env_with_targets) == %{
-             arch: "arm",
-             vendor: "ecorp",
-             os: "freebsd",
-             abi: "musl"
-           }
+    test "apple host and freebsd target with vendor" do
+      host_system = %{
+        arch: "x86_64",
+        vendor: "apple",
+        os: "darwin20.3.0"
+      }
+
+      env_with_targets = fn
+        "TARGET_OS" -> "freebsd"
+        "TARGET_ARCH" -> "arm"
+        "TARGET_ABI" -> "musl"
+        "TARGET_VENDOR" -> "ecorp"
+      end
+
+      assert RustlerPrecompiled.maybe_override_with_env_vars(host_system, env_with_targets) == %{
+               arch: "arm",
+               vendor: "ecorp",
+               os: "freebsd",
+               abi: "musl"
+             }
+    end
+
+    test "apple host and linux target without vendor" do
+      host_system = %{
+        arch: "x86_64",
+        vendor: "apple",
+        os: "darwin20.3.0"
+      }
+
+      env_with_targets = fn
+        "TARGET_OS" -> "linux"
+        "TARGET_ARCH" -> "arm"
+        "TARGET_ABI" -> "musl"
+        _ -> nil
+      end
+
+      assert RustlerPrecompiled.maybe_override_with_env_vars(host_system, env_with_targets) == %{
+               arch: "arm",
+               vendor: "unknown",
+               os: "linux",
+               abi: "musl"
+             }
+    end
+
+    test "windows host and windows target with the same vendor" do
+      host_system = %{
+        arch: "x86_64",
+        vendor: "pc",
+        os: "windows"
+      }
+
+      env_with_targets = fn
+        "TARGET_OS" -> "windows"
+        "TARGET_ARCH" -> "x86_64"
+        "TARGET_ABI" -> "msvc"
+        "TARGET_VENDOR" -> "pc"
+      end
+
+      assert RustlerPrecompiled.maybe_override_with_env_vars(host_system, env_with_targets) == %{
+               arch: "x86_64",
+               vendor: "pc",
+               os: "windows",
+               abi: "msvc"
+             }
+    end
   end
 
   @tag :tmp_dir
