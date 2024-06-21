@@ -40,6 +40,12 @@ defmodule RustlerPrecompiled do
 
           {:rustler, ">= 0.0.0", optional: true}
 
+      In case you want to force the build for all packages using RustlerPrecompiled, you
+      can set the application config `:force_build_all`, or the env var
+      `RUSTLER_PRECOMPILED_FORCE_BUILD_ALL` (see details below):
+
+          config :rustler_precompiled, force_build_all: true
+
     * `:targets` - A list of targets [supported by
       Rust](https://doc.rust-lang.org/rustc/platform-support.html) for which
       precompiled assets are available. By default the following targets are
@@ -49,7 +55,7 @@ defmodule RustlerPrecompiled do
 
     * `:nif_versions` - A list of OTP NIF versions for which precompiled assets are
       available. A NIF version is usually compatible with two OTP minor versions, and an older
-      NIF is usually compatible with newer OTPs. The available versions are the following: 
+      NIF is usually compatible with newer OTPs. The available versions are the following:
 
       * `2.14` - for OTP 21 and above.
       * `2.15` - for OTP 22 and above.
@@ -102,7 +108,7 @@ defmodule RustlerPrecompiled do
 
     * `TARGET_ABI` - The target ABI (e.g., `gnueabihf`, `musl`). This is set by Nerves as well.
 
-    * `TARGET_VENDOR` - The target vendor (e.g., `unknown`, `apple`, `pc`). This is **not** set by Nerves. 
+    * `TARGET_VENDOR` - The target vendor (e.g., `unknown`, `apple`, `pc`). This is **not** set by Nerves.
       If any of the `TARGET_` env vars is set, but `TARGET_VENDOR` is empty, then we change the
       target vendor to `unknown` that is the default value for Linux systems.
 
@@ -115,7 +121,11 @@ defmodule RustlerPrecompiled do
       This variable is important for systems that cannot perform a download at compile time, like inside
       NixOS. It will require people to previously download the artifacts to that path.
 
-      Note that all packages using `RustlerPrecompiled` will be affected by this env var.
+    * `RUSTLER_PRECOMPILED_FORCE_BUILD_ALL` - If set to "1" or "true", it will override the `:force_build`
+      configuration for all packages, and will force the build for them all.
+      You can set the `:force_build_all` configuration to `true` to have the same effect.
+
+  Note that all packages using `RustlerPrecompiled` will be affected by these environment variables.
 
   For more details about Nerves env vars, see https://hexdocs.pm/nerves/environment-variables.html
 
@@ -141,11 +151,19 @@ defmodule RustlerPrecompiled do
       otp_app = Keyword.fetch!(opts, :otp_app)
 
       opts =
-        Keyword.put_new(
-          opts,
-          :force_build,
-          Application.compile_env(:rustler_precompiled, [:force_build, otp_app])
-        )
+        if Application.compile_env(
+             :rustler_precompiled,
+             :force_build_all,
+             System.get_env("RUSTLER_PRECOMPILED_FORCE_BUILD_ALL") in ["1", "true"]
+           ) do
+          Keyword.put(opts, :force_build, true)
+        else
+          Keyword.put_new(
+            opts,
+            :force_build,
+            Application.compile_env(:rustler_precompiled, [:force_build, otp_app])
+          )
+        end
 
       case RustlerPrecompiled.__using__(__MODULE__, opts) do
         {:force_build, only_rustler_opts} ->
