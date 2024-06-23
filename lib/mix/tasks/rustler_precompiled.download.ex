@@ -16,6 +16,14 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
   This is useful when you are developing a new NIF that does not support all platforms.
 
   This task also accept the `--print` flag to print the checksums.
+
+  Since v0.7.2 we start the app invoking this mix task by default. To avoid that, use
+  the `--no-start` flag.
+
+  If the app is started, we are going to check for the compiled module with that name.
+  In case the `--no-start` flag is used, we are going to search for a ".beam" file for
+  that module, and in case it's not found, we are going to print a message. This is useful
+  to avoid typos.
   """
 
   use Mix.Task
@@ -24,6 +32,7 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
     all: :boolean,
     only_local: :boolean,
     print: :boolean,
+    no_start: :boolean,
     ignore_unavailable: :boolean
   ]
 
@@ -32,6 +41,26 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
     module = String.to_atom("Elixir.#{module_name}")
 
     {options, _args, _invalid} = OptionParser.parse(flags, strict: @switches)
+
+    if options[:no_start] do
+      if Path.wildcard("_build/{dev,prod}/lib/**/ebin/Elixir.#{module_name}.beam") == [] do
+        IO.puts(
+          "Could not find a compiled module with that name. Make sure the project is compiled and the module name is correct."
+        )
+      end
+    else
+      Mix.Task.run("app.start", [])
+
+      case Code.ensure_compiled(module) do
+        {:module, _module} ->
+          :ok
+
+        {:error, error} ->
+          IO.puts(
+            "Could not ensure that module is compiled. Be sure that the name is correct. Reason: #{inspect(error)}"
+          )
+      end
+    end
 
     urls =
       cond do
