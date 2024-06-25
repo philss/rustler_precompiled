@@ -16,6 +16,11 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
   This is useful when you are developing a new NIF that does not support all platforms.
 
   This task also accept the `--print` flag to print the checksums.
+
+  Since v0.7.2 we configure the app invoking this mix task by default. This means that
+  the app you are invoking this task from will be compiled and run the "release" configuration.
+  We need to compile the app to make sure the module name is correct.
+  To avoid that, use the `--no-config` flag.
   """
 
   use Mix.Task
@@ -24,6 +29,7 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
     all: :boolean,
     only_local: :boolean,
     print: :boolean,
+    no_config: :boolean,
     ignore_unavailable: :boolean
   ]
 
@@ -33,12 +39,26 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
 
     {options, _args, _invalid} = OptionParser.parse(flags, strict: @switches)
 
+    unless options[:no_config] do
+      Mix.Task.run("app.config", [])
+    end
+
+    case Code.ensure_compiled(module) do
+      {:module, _module} ->
+        :ok
+
+      {:error, error} ->
+        IO.puts(
+          "Could not ensure that module is compiled. Be sure that the name is correct. Reason: #{inspect(error)}"
+        )
+    end
+
     urls =
       cond do
-        Keyword.get(options, :all) ->
+        options[:all] ->
           RustlerPrecompiled.available_nif_urls(module)
 
-        Keyword.get(options, :only_local) ->
+        options[:only_local] ->
           RustlerPrecompiled.current_target_nif_urls(module)
 
         true ->
@@ -47,7 +67,7 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
 
     result = RustlerPrecompiled.download_nif_artifacts_with_checksums!(urls, options)
 
-    if Keyword.get(options, :print) do
+    if options[:print] do
       result
       |> Enum.map(fn map ->
         {Path.basename(Map.fetch!(map, :path)), Map.fetch!(map, :checksum)}
