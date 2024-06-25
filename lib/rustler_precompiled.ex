@@ -24,7 +24,16 @@ defmodule RustlerPrecompiled do
 
     * `:crate` - The name of Rust crate if different from the `:otp_app`. This is optional.
 
-    * `:base_url` - A valid URL that is used as base path for the NIF file.
+    * `:base_url` - Location where to find the NIFs from. This should be one of the following:
+
+      * A URL to a directory containing the NIFs. The name of the NIF will be appended to it
+        and a GET request will be made. Works well with public GitHub releases.
+      * A tuple of {URL, headers}. The headers should be a list of
+        key-value pairs. This is useful when the NIFs are hosted in a private server.
+      * A tuple of {module, function}. The function is given the NIF file name and should return a URL
+        or a tuple of {URL, headers}. This should be used for all cases not covered by the above.
+        For example when multiple requests have to be made, like when using a private GitHub release
+        through the GitHub API, or when the URLs don't resemble a simple directory.
 
     * `:version` - The version of precompiled assets (it is part of the NIF filename).
 
@@ -263,7 +272,7 @@ defmodule RustlerPrecompiled do
   @native_dir "priv/native"
 
   @doc """
-  Returns URLs for NIFs based on its module name.
+  Returns tuples of file names and their URLs for NIFs based on its module name.
 
   The module name is the one that defined the NIF and this information
   is stored in a metadata file.
@@ -320,17 +329,15 @@ defmodule RustlerPrecompiled do
     variants = Map.fetch!(variants, target_triple)
 
     for variant <- variants do
-      tar_gz_file_url(
-        base_url,
-        lib_name_with_ext(target_triple, lib_name <> "--" <> Atom.to_string(variant))
-      )
+      lib_name = lib_name_with_ext(target_triple, lib_name <> "--" <> Atom.to_string(variant))
+      {lib_name, tar_gz_file_url(base_url, lib_name)}
     end
   end
 
   defp maybe_variants_tar_gz_urls(_, _, _, _), do: []
 
   @doc """
-  Returns the file URLs to be downloaded for current target.
+  Returns tuples of file names and their URLs to be downloaded for current target.
 
   It is in the plural because a target may have some variants for it.
   It receives the NIF module.
@@ -362,9 +369,10 @@ defmodule RustlerPrecompiled do
 
   defp tar_gz_urls(base_url, basename, version, nif_version, target_triple, variants) do
     lib_name = lib_name(basename, version, nif_version, target_triple)
+    lib_name_with_ext = lib_name_with_ext(target_triple, lib_name)
 
     [
-      tar_gz_file_url(base_url, lib_name_with_ext(target_triple, lib_name))
+      {lib_name_with_ext, tar_gz_file_url(base_url, lib_name_with_ext(target_triple, lib_name))}
       | maybe_variants_tar_gz_urls(variants, base_url, target_triple, lib_name)
     ]
   end
@@ -615,7 +623,7 @@ defmodule RustlerPrecompiled do
 
         # `cache_base_dir` is a "private" option used only in tests.
         cache_dir = cache_dir(config.base_cache_dir, "precompiled_nifs")
-        cached_tar_gz = Path.join(cache_dir, "#{file_name}.tar.gz")
+        cached_tar_gz = Path.join(cache_dir, file_name)
 
         {:ok,
          Map.merge(basic_metadata, %{
@@ -840,21 +848,34 @@ defmodule RustlerPrecompiled do
         "so"
       end
 
-    "#{lib_name}.#{ext}"
+    "#{lib_name}.#{ext}.tar.gz"
   end
 
-  defp tar_gz_file_url(base_url, file_name) do
+  defp tar_gz_file_url({module, function_name}, file_name)
+       when is_atom(module) and is_atom(function_name) do
+    apply(module, function_name, [file_name])
+  end
+
+  defp tar_gz_file_url({base_url, request_headers}, file_name) do
     uri = URI.parse(base_url)
 
     uri =
       Map.update!(uri, :path, fn path ->
-        Path.join(path || "", "#{file_name}.tar.gz")
+        Path.join(path || "", file_name)
       end)
 
-    to_string(uri)
+    {to_string(uri), request_headers}
   end
 
-  defp download_nif_artifact(url) do
+  defp tar_gz_file_url(base_url, file_name) do
+    tar_gz_file_url({base_url, []}, file_name)
+  end
+
+  defp download_nif_artifact(url) when is_binary(url) do
+    download_nif_artifact({url, []})
+  end
+
+  defp download_nif_artifact({url, request_headers}) do
     url = String.to_charlist(url)
     Logger.debug("Downloading NIF from #{url}")
 
@@ -895,7 +916,7 @@ defmodule RustlerPrecompiled do
 
     options = [body_format: :binary]
 
-    case :httpc.request(:get, {url, []}, http_options, options) do
+    case :httpc.request(:get, {url, request_headers}, http_options, options) do
       {:ok, {{_, 200, _}, _headers, body}} ->
         {:ok, body}
 
@@ -912,16 +933,17 @@ defmodule RustlerPrecompiled do
     attempts = max_retries(options)
 
     download_results =
-      for url <- urls, do: {url, with_retry(fn -> download_nif_artifact(url) end, attempts)}
+      for {lib_name, url} <- urls,
+          do: {lib_name, with_retry(fn -> download_nif_artifact(url) end, attempts)}
 
     cache_dir = cache_dir("precompiled_nifs")
     :ok = File.mkdir_p(cache_dir)
 
     Enum.flat_map(download_results, fn result ->
-      with {:download, {url, download_result}} <- {:download, result},
+      with {:download, {lib_name, download_result}} <- {:download, result},
            {:download_result, {:ok, body}} <- {:download_result, download_result},
            hash <- :crypto.hash(@checksum_algo, body),
-           path <- Path.join(cache_dir, basename_from_url(url)),
+           path <- Path.join(cache_dir, lib_name),
            {:file, :ok} <- {:file, File.write(path, body)} do
         checksum = Base.encode16(hash, case: :lower)
 
@@ -931,7 +953,7 @@ defmodule RustlerPrecompiled do
 
         [
           %{
-            url: url,
+            lib_name: lib_name,
             path: path,
             checksum: checksum,
             checksum_algo: @checksum_algo
@@ -983,14 +1005,6 @@ defmodule RustlerPrecompiled do
           {:cont, fun.()}
       end
     end)
-  end
-
-  defp basename_from_url(url) do
-    uri = URI.parse(url)
-
-    uri.path
-    |> String.split("/")
-    |> List.last()
   end
 
   defp read_map_from_file(file) do
