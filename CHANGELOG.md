@@ -12,8 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The `RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH` environment variable was added to enable
-  an easy way to configure a directory to fetch the artifacts from before reaching the
-  internet.
+  an easy way to configure a directory to fetch the artifacts before reaching the internet.
   This is useful to make more predictable where the cache files will be located, thus
   enabling users to use that directory as a repository for the artifacts.
   This env var will affect all packages using this library.
@@ -36,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop throwing an error in case the metadata cannot be written.
   This is because metadata is only necessary in the process of publishing the package,
   and users may be running with "write" permission restrictions.
-  Instead we now print a warning.
+  We now print a warning instead.
 
 ### Fixed
 
