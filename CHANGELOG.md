@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2024-06-26
+
+### Added
+
+- The `RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH` environment variable was added to enable
+  an easy way to configure a directory to fetch the artifacts from before reaching the
+  internet.
+  This is useful to make more predictable where the cache files will be located, thus
+  enabling users to use that directory as a repository for the artifacts.
+  This env var will affect all packages using this library.
+
+ - Add the `RUSTLER_PRECOMPILED_FORCE_BUILD_ALL` env var to force the build of all packages
+   using RustlerPrecompiled. Be aware that `Rustler` will be required if this is set
+   to `1` or `true`. There is a new application env that has precedence over the env var,
+   which is the `:force_build_all`.
+
+### Changed
+
+- Automatically run the "app.config" mix task in the "rustler_precompiled.download" mix task.
+
+  This will trigger the project compilation and configuration, but will not start the app.
+  It's necessary to check if the module passed to the task exists or not.
+
+  You can deactivate this behaviour by passing the flag `--no-config` to that mix task.
+  The mix task "rustler_precompiled.download" is used in the step of publishing a package.
+
+- Stop throwing an error in case the metadata cannot be written.
+  This is because metadata is only necessary in the process of publishing the package,
+  and users may be running with "write" permission restrictions.
+  Instead we now print a warning.
+
+### Fixed
+
+- Restrict the change of vendor to "unknown" only if the target is a Linux system.
+
 ## [0.7.1] - 2023-11-30
 
 ### Fixed
@@ -192,7 +227,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/philss/rustler_precompiled/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/philss/rustler_precompiled/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/philss/rustler_precompiled/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/philss/rustler_precompiled/compare/v0.6.2...v0.6.3
