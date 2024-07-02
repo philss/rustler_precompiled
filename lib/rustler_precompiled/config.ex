@@ -103,7 +103,7 @@ defmodule RustlerPrecompiled.Config do
     if Kernel.function_exported?(module, function, 1) do
       {module, function}
     else
-      raise "`:base_url` for `RustlerPrecompiled` is a function that does not exist: #{inspect(module)}.#{function}"
+      raise "`:base_url` for `RustlerPrecompiled` is a function that does not exist: `#{inspect(module)}.#{function}/1`"
     end
   end
 

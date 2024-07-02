@@ -28,10 +28,14 @@ defmodule RustlerPrecompiled do
 
       * A URL to a directory containing the NIFs. The name of the NIF will be appended to it
         and a GET request will be made. Works well with public GitHub releases.
-      * A tuple of {URL, headers}. The headers should be a list of
-        key-value pairs. This is useful when the NIFs are hosted in a private server.
-      * A tuple of {module, function}. The function is given the NIF file name and should return a URL
-        or a tuple of {URL, headers}. This should be used for all cases not covered by the above.
+
+      * A tuple of `{URL, headers}`. The headers should be a list of key-value pairs.
+        This is useful when the NIFs are hosted in a private server.
+
+      * A tuple of `{module, function}` where the `function` is an atom representing the function
+        name in that module. It's expected a function of arity 1, where the NIF file name is given,
+        and it should return a URL or a tuple of `{URL, headers}`.
+        This should be used for all cases not covered by the above.
         For example when multiple requests have to be made, like when using a private GitHub release
         through the GitHub API, or when the URLs don't resemble a simple directory.
 
