@@ -529,7 +529,7 @@ defmodule RustlerPrecompiledTest do
               module: RustlerPrecompilationExample.Native,
               base_cache_dir: tmp_dir,
               base_url:
-                {"http://localhost:#{bypass.port}/download", [{'authorization', "Token 123"}]},
+                {"http://localhost:#{bypass.port}/download", [{"authorization", "Token 123"}]},
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
@@ -1015,7 +1015,7 @@ defmodule RustlerPrecompiledTest do
                  "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu.so.tar.gz",
                  "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-musl.so.tar.gz"
                ]
-               |> Enum.map(fn file_name -> {file_name, {"#{base_url}/#{file_name}", []}} end)
+               |> Enum.map(fn file_name -> "#{base_url}/#{file_name}" end)
     end
 
     test "does not build list of tar gz urls due to missing metadata field" do
@@ -1063,6 +1063,6 @@ defmodule RustlerPrecompiledTest do
 
   def url_with_headers(file_name) do
     {"http://localhost:1234/download?file_name=#{file_name}&foo=bar",
-     [{'authorization', "Token 123"}]}
+     [{"authorization", "Token 123"}]}
   end
 end

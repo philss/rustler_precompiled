@@ -275,13 +275,19 @@ defmodule RustlerPrecompiled do
 
   @native_dir "priv/native"
 
+  @doc deprecated: "Use available_nifs/1 instead"
+  def available_nif_urls(nif_module) when is_atom(nif_module) do
+    available_nifs(nif_module)
+    |> Enum.map(fn {_lib_name, {url, _headers}} -> url end)
+  end
+
   @doc """
-  Returns tuples of file names and their URLs for NIFs based on its module name.
+  Returns URLs for NIFs based on its module name as a list of tuples: `[{lib_name, {url, headers}}]`.
 
   The module name is the one that defined the NIF and this information
   is stored in a metadata file.
   """
-  def available_nif_urls(nif_module) when is_atom(nif_module) do
+  def available_nifs(nif_module) when is_atom(nif_module) do
     nif_module
     |> metadata_file()
     |> read_map_from_file()
@@ -299,6 +305,17 @@ defmodule RustlerPrecompiled do
 
   @doc false
   def nif_urls_from_metadata(metadata) when is_map(metadata) do
+    case(nifs_from_metadata(metadata)) do
+      {:ok, nifs} ->
+        {:ok, Enum.map(nifs, fn {_lib_name, {url, _headers}} -> url end)}
+
+      {:error, wrong_meta} ->
+        {:error, wrong_meta}
+    end
+  end
+
+  @doc false
+  def nifs_from_metadata(metadata) when is_map(metadata) do
     case metadata do
       %{
         targets: targets,
@@ -340,13 +357,19 @@ defmodule RustlerPrecompiled do
 
   defp maybe_variants_tar_gz_urls(_, _, _, _), do: []
 
+  @doc deprecated: "Use current_target_nifs/1 instead"
+  def current_target_nif_urls(nif_module) when is_atom(nif_module) do
+    current_target_nifs(nif_module)
+    |> Enum.map(fn {_lib_name, {url, _headers}} -> url end)
+  end
+
   @doc """
-  Returns tuples of file names and their URLs to be downloaded for current target.
+  Returns the file URLs to be downloaded for current target as a list of tuples: `[{lib_name, {url, headers}}]`.
 
   It is in the plural because a target may have some variants for it.
   It receives the NIF module.
   """
-  def current_target_nif_urls(nif_module) when is_atom(nif_module) do
+  def current_target_nifs(nif_module) when is_atom(nif_module) do
     metadata =
       nif_module
       |> metadata_file()
@@ -919,6 +942,9 @@ defmodule RustlerPrecompiled do
     ]
 
     options = [body_format: :binary]
+
+    request_headers =
+      Enum.map(request_headers, fn {k, v} when is_binary(k) -> {String.to_charlist(k), v} end)
 
     case :httpc.request(:get, {url, request_headers}, http_options, options) do
       {:ok, {{_, 200, _}, _headers, body}} ->

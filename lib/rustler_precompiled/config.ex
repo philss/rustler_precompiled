@@ -83,6 +83,10 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_base_url!(nil), do: raise_for_nil_field_value(:base_url)
 
+  defp validate_base_url!(base_url) when is_binary(base_url) do
+    validate_base_url!({base_url, []})
+  end
+
   defp validate_base_url!({base_url, headers}) when is_binary(base_url) and is_list(headers) do
     case :uri_string.parse(base_url) do
       %{} ->
@@ -105,10 +109,6 @@ defmodule RustlerPrecompiled.Config do
     else
       raise "`:base_url` for `RustlerPrecompiled` is a function that does not exist: `#{inspect(module)}.#{function}/1`"
     end
-  end
-
-  defp validate_base_url!(base_url) when is_binary(base_url) do
-    validate_base_url!({base_url, []})
   end
 
   defp validate_list!(nil, option, _valid_values), do: raise_for_nil_field_value(option)
