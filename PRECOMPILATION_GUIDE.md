@@ -59,8 +59,8 @@ matrix:
   job:
     - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , use-cross: true }
     - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true }
-    - { target: aarch64-apple-darwin        , os: macos-11      }
-    - { target: x86_64-apple-darwin         , os: macos-11      }
+    - { target: aarch64-apple-darwin        , os: macos-12      }
+    - { target: x86_64-apple-darwin         , os: macos-12      }
     - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04  }
     - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , use-cross: true }
     - { target: x86_64-pc-windows-gnu       , os: windows-2019  }
