@@ -83,13 +83,31 @@ defmodule RustlerPrecompiled.Config do
 
   defp validate_base_url!(nil), do: raise_for_nil_field_value(:base_url)
 
-  defp validate_base_url!(base_url) do
+  defp validate_base_url!(base_url) when is_binary(base_url) do
+    validate_base_url!({base_url, []})
+  end
+
+  defp validate_base_url!({base_url, headers}) when is_binary(base_url) and is_list(headers) do
     case :uri_string.parse(base_url) do
       %{} ->
-        base_url
+        if Enum.all?(headers, &match?({key, value} when is_list(key) and is_binary(value), &1)) do
+          {base_url, headers}
+        else
+          raise "`:base_url` for `RustlerPrecompiled` must be a list of `{charlist(),binary()}`"
+        end
 
       {:error, :invalid_uri, error} ->
         raise "`:base_url` for `RustlerPrecompiled` is invalid: #{inspect(to_string(error))}"
+    end
+  end
+
+  defp validate_base_url!({module, function}) when is_atom(module) and is_atom(function) do
+    Code.ensure_compiled!(module)
+
+    if Kernel.function_exported?(module, function, 1) do
+      {module, function}
+    else
+      raise "`:base_url` for `RustlerPrecompiled` is a function that does not exist: `#{inspect(module)}.#{function}/1`"
     end
   end
 
