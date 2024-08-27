@@ -557,7 +557,8 @@ defmodule RustlerPrecompiled do
         arch = normalize_arch(target_system.arch)
 
         vendor =
-          with vendor when vendor in ~w(pc redhat suse) <- target_system.vendor, do: "unknown"
+          with vendor when vendor in ~w(pc redhat suse alpine) <- target_system.vendor,
+               do: "unknown"
 
         %{target_system | arch: arch, vendor: vendor}
 
