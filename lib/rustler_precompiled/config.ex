@@ -90,10 +90,10 @@ defmodule RustlerPrecompiled.Config do
   defp validate_base_url!({base_url, headers}) when is_binary(base_url) and is_list(headers) do
     case :uri_string.parse(base_url) do
       %{} ->
-        if Enum.all?(headers, &match?({key, value} when is_list(key) and is_binary(value), &1)) do
+        if Enum.all?(headers, &match?({key, value} when is_binary(key) and is_binary(value), &1)) do
           {base_url, headers}
         else
-          raise "`:base_url` for `RustlerPrecompiled` must be a list of `{charlist(),binary()}`"
+          raise "`:base_url` headers for `RustlerPrecompiled` must be a list of `{binary(),binary()}`"
         end
 
       {:error, :invalid_uri, error} ->
