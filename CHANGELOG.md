@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-08-28
+
+### Added
+
+- Add support for passing headers or a `{module, :function_name}` to `:base_url`.
+  The headers can be passed in the format `{"URL", [{"header_key", "header_value"}]}`.
+  This feature is useful for people that need to perform authentication before downloading
+  the artifacts.
+
+- Add `available_nifs/1` to replace `available_nif_urls/1` that was deprecated.
+  The new function will return a list of tuples in the format: `{"lib_name", {"base_url", [headers]}}`.
+
+- Add `current_target_nifs/1` to replace `current_target_nif_urls/1` that was deprecated.
+  The new function will return a list of tuples in the format: `{"lib_name", {"base_url", [headers]}}`.
+
+### Deprecated
+
+- `available_nif_urls/1`
+- `current_target_nif_urls/1`
+
+### Removed
+
+- Remove support for Elixir 1.12.
+
 ## [0.7.3] - 2024-08-28
 
 ### Fixed
@@ -232,7 +256,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/philss/rustler_precompiled/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/philss/rustler_precompiled/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/philss/rustler_precompiled/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/philss/rustler_precompiled/compare/v0.7.0...v0.7.1
