@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2024-08-28
+
+### Fixed
+
+- Add the `alpine` vendor to the list of Linux vendors that we treat as "unknown".
+
 ## [0.7.2] - 2024-06-26
 
 ### Added
