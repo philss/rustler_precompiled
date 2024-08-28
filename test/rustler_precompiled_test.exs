@@ -436,17 +436,19 @@ defmodule RustlerPrecompiledTest do
 
         result =
           capture_log(fn ->
-            config = %RustlerPrecompiled.Config{
-              otp_app: :rustler_precompiled,
-              module: RustlerPrecompilationExample.Native,
-              base_cache_dir: nif_fixtures_dir,
-              base_url:
-                "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-              version: "0.2.0",
-              crate: "example",
-              targets: @available_targets,
-              nif_versions: @default_nif_versions
-            }
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: nif_fixtures_dir,
+                base_url:
+                  "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -485,16 +487,127 @@ defmodule RustlerPrecompiledTest do
 
         result =
           capture_log(fn ->
-            config = %RustlerPrecompiled.Config{
-              otp_app: :rustler_precompiled,
-              module: RustlerPrecompilationExample.Native,
-              base_cache_dir: tmp_dir,
-              base_url: "http://localhost:#{bypass.port}/download",
-              version: "0.2.0",
-              crate: "example",
-              targets: @available_targets,
-              nif_versions: @default_nif_versions
-            }
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: tmp_dir,
+                base_url: "http://localhost:#{bypass.port}/download",
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
+
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+
+            assert result.load?
+            assert {:rustler_precompiled, path} = result.load_from
+
+            assert path =~ "priv/native"
+            assert path =~ "example-v0.2.0-nif"
+          end)
+
+        assert result =~ "Downloading"
+        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "NIF cached at"
+      end)
+    end
+
+    @tag :tmp_dir
+    test "a project downloading precompiled NIFs with custom header", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open()
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect_once(bypass, fn conn ->
+          file_name = List.last(conn.path_info)
+          file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          if Plug.Conn.get_req_header(conn, "authorization") == ["Token 123"] do
+            Plug.Conn.resp(conn, 200, file)
+          else
+            Plug.Conn.resp(conn, 401, "Unauthorized")
+          end
+        end)
+
+        result =
+          capture_log(fn ->
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: tmp_dir,
+                base_url:
+                  {"http://localhost:#{bypass.port}/download", [{"authorization", "Token 123"}]},
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
+
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, result} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+
+            assert result.load?
+            assert {:rustler_precompiled, path} = result.load_from
+
+            assert path =~ "priv/native"
+            assert path =~ "example-v0.2.0-nif"
+          end)
+
+        assert result =~ "Downloading"
+        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "NIF cached at"
+      end)
+    end
+
+    @tag :tmp_dir
+    test "a project downloading precompiled NIFs with custom handler", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open(port: 1234)
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect_once(bypass, fn conn ->
+          %{"file_name" => file_name} = URI.decode_query(conn.query_string)
+          file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          if Plug.Conn.get_req_header(conn, "authorization") == ["Token 123"] do
+            Plug.Conn.resp(conn, 200, file)
+          else
+            Plug.Conn.resp(conn, 401, "Unauthorized")
+          end
+        end)
+
+        result =
+          capture_log(fn ->
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: tmp_dir,
+                base_url: {__MODULE__, :url_with_headers},
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -542,16 +655,18 @@ defmodule RustlerPrecompiledTest do
 
         result =
           capture_log(fn ->
-            config = %RustlerPrecompiled.Config{
-              otp_app: :rustler_precompiled,
-              module: RustlerPrecompilationExample.Native,
-              base_cache_dir: tmp_dir,
-              base_url: "http://localhost:#{bypass.port}/download",
-              version: "0.2.0",
-              crate: "example",
-              targets: @available_targets,
-              nif_versions: @default_nif_versions
-            }
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: tmp_dir,
+                base_url: "http://localhost:#{bypass.port}/download",
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
 
             {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -593,17 +708,19 @@ defmodule RustlerPrecompiledTest do
         end)
 
         capture_log(fn ->
-          config = %RustlerPrecompiled.Config{
-            otp_app: :rustler_precompiled,
-            module: RustlerPrecompilationExample.Native,
-            base_cache_dir: tmp_dir,
-            base_url: "http://localhost:#{bypass.port}/download",
-            version: "0.2.0",
-            crate: "example",
-            max_retries: 0,
-            targets: @available_targets,
-            nif_versions: @default_nif_versions
-          }
+          config =
+            RustlerPrecompiled.Config.new(
+              otp_app: :rustler_precompiled,
+              module: RustlerPrecompilationExample.Native,
+              base_cache_dir: tmp_dir,
+              base_url: "http://localhost:#{bypass.port}/download",
+              version: "0.2.0",
+              crate: "example",
+              max_retries: 0,
+              targets: @available_targets,
+              nif_versions: @default_nif_versions,
+              force_build: false
+            )
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -632,16 +749,18 @@ defmodule RustlerPrecompiledTest do
         end)
 
         capture_log(fn ->
-          config = %RustlerPrecompiled.Config{
-            otp_app: :rustler_precompiled,
-            module: RustlerPrecompilationExample.Native,
-            base_cache_dir: tmp_dir,
-            base_url: "http://localhost:#{bypass.port}/download",
-            version: "0.2.0",
-            crate: "example",
-            targets: @available_targets,
-            nif_versions: @default_nif_versions
-          }
+          config =
+            RustlerPrecompiled.Config.new(
+              otp_app: :rustler_precompiled,
+              module: RustlerPrecompilationExample.Native,
+              base_cache_dir: tmp_dir,
+              base_url: "http://localhost:#{bypass.port}/download",
+              version: "0.2.0",
+              crate: "example",
+              targets: @available_targets,
+              nif_versions: @default_nif_versions,
+              force_build: false
+            )
 
           {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -658,17 +777,19 @@ defmodule RustlerPrecompiledTest do
 
   describe "build_metadata/1" do
     test "builds a valid metadata" do
-      config = %RustlerPrecompiled.Config{
-        otp_app: :rustler_precompiled,
-        module: RustlerPrecompilationExample.Native,
-        base_url:
-          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-        version: "0.2.0",
-        crate: "example",
-        targets: @available_targets,
-        variants: %{},
-        nif_versions: @available_nif_versions
-      }
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url:
+            "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+          version: "0.2.0",
+          crate: "example",
+          targets: @available_targets,
+          variants: %{},
+          nif_versions: @available_nif_versions,
+          force_build: false
+        )
 
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -685,16 +806,18 @@ defmodule RustlerPrecompiledTest do
     end
 
     test "returns error when current target is not available" do
-      config = %RustlerPrecompiled.Config{
-        otp_app: :rustler_precompiled,
-        module: RustlerPrecompilationExample.Native,
-        base_url:
-          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-        version: "0.2.0",
-        crate: "example",
-        targets: ["hexagon-unknown-linux-musl"],
-        nif_versions: @available_nif_versions
-      }
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url:
+            "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+          version: "0.2.0",
+          crate: "example",
+          targets: ["hexagon-unknown-linux-musl"],
+          nif_versions: @available_nif_versions,
+          force_build: false
+        )
 
       assert {:error, error} = RustlerPrecompiled.build_metadata(config)
       assert error =~ "precompiled NIF is not available for this target: "
@@ -765,16 +888,18 @@ defmodule RustlerPrecompiledTest do
     end
 
     test "builds a valid metadata with a restrict NIF versions list" do
-      config = %RustlerPrecompiled.Config{
-        otp_app: :rustler_precompiled,
-        module: RustlerPrecompilationExample.Native,
-        base_url:
-          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-        version: "0.2.0",
-        crate: "example",
-        targets: @available_targets,
-        nif_versions: ["2.15"]
-      }
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url:
+            "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+          version: "0.2.0",
+          crate: "example",
+          targets: @available_targets,
+          nif_versions: ["2.15"],
+          force_build: false
+        )
 
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -782,22 +907,24 @@ defmodule RustlerPrecompiledTest do
     end
 
     test "builds a valid metadata with specified variants" do
-      config = %RustlerPrecompiled.Config{
-        otp_app: :rustler_precompiled,
-        module: RustlerPrecompilationExample.Native,
-        base_url:
-          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-        version: "0.2.0",
-        crate: "example",
-        targets: @available_targets,
-        variants: %{
-          "x86_64-unknown-linux-gnu" => [
-            old_glibc: fn _config -> true end,
-            legacy_cpus: fn _config -> true end
-          ]
-        },
-        nif_versions: @available_nif_versions
-      }
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url:
+            "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+          version: "0.2.0",
+          crate: "example",
+          targets: @available_targets,
+          variants: %{
+            "x86_64-unknown-linux-gnu" => [
+              old_glibc: fn _config -> true end,
+              legacy_cpus: fn _config -> true end
+            ]
+          },
+          nif_versions: @available_nif_versions,
+          force_build: false
+        )
 
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -806,27 +933,29 @@ defmodule RustlerPrecompiledTest do
       # We need this guard because not every one is running the tests in the same OS/Arch.
       if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
         assert String.ends_with?(metadata.lib_name, "--old_glibc")
-        assert String.ends_with?(metadata.file_name, "--old_glibc.so")
+        assert String.ends_with?(metadata.file_name, "--old_glibc.so.tar.gz")
       end
     end
 
     test "builds a valid metadata saving the current variant as legacy CPU" do
-      config = %RustlerPrecompiled.Config{
-        otp_app: :rustler_precompiled,
-        module: RustlerPrecompilationExample.Native,
-        base_url:
-          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
-        version: "0.2.0",
-        crate: "example",
-        targets: @available_targets,
-        variants: %{
-          "x86_64-unknown-linux-gnu" => [
-            old_glibc: fn _config -> false end,
-            legacy_cpus: fn _config -> true end
-          ]
-        },
-        nif_versions: @available_nif_versions
-      }
+      config =
+        RustlerPrecompiled.Config.new(
+          otp_app: :rustler_precompiled,
+          module: RustlerPrecompilationExample.Native,
+          base_url:
+            "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+          version: "0.2.0",
+          crate: "example",
+          targets: @available_targets,
+          variants: %{
+            "x86_64-unknown-linux-gnu" => [
+              old_glibc: fn _config -> false end,
+              legacy_cpus: fn _config -> true end
+            ]
+          },
+          nif_versions: @available_nif_versions,
+          force_build: false
+        )
 
       assert {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
 
@@ -834,7 +963,7 @@ defmodule RustlerPrecompiledTest do
 
       if metadata.lib_name =~ "x86_64-unknown-linux-gnu" do
         assert String.ends_with?(metadata.lib_name, "--legacy_cpus")
-        assert String.ends_with?(metadata.file_name, "--legacy_cpus.so")
+        assert String.ends_with?(metadata.file_name, "--legacy_cpus.so.tar.gz")
       end
     end
   end
@@ -967,5 +1096,10 @@ defmodule RustlerPrecompiledTest do
     |> :crypto.strong_rand_bytes()
     |> Base.encode64()
     |> binary_part(0, len)
+  end
+
+  def url_with_headers(file_name) do
+    {"http://localhost:1234/download?file_name=#{file_name}&foo=bar",
+     [{"authorization", "Token 123"}]}
   end
 end
