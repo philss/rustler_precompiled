@@ -305,12 +305,8 @@ defmodule RustlerPrecompiled do
 
   @doc false
   def nif_urls_from_metadata(metadata) when is_map(metadata) do
-    case(nifs_from_metadata(metadata)) do
-      {:ok, nifs} ->
-        {:ok, Enum.map(nifs, fn {_lib_name, {url, _headers}} -> url end)}
-
-      {:error, wrong_meta} ->
-        {:error, wrong_meta}
+    with {:ok, nifs} <- nifs_from_metadata(metadata) do
+      {:ok, Enum.map(nifs, fn {_lib_name, {url, _headers}} -> url end)}
     end
   end
 
@@ -359,7 +355,8 @@ defmodule RustlerPrecompiled do
 
   @doc deprecated: "Use current_target_nifs/1 instead"
   def current_target_nif_urls(nif_module) when is_atom(nif_module) do
-    current_target_nifs(nif_module)
+    nif_module
+    |> current_target_nifs()
     |> Enum.map(fn {_lib_name, {url, _headers}} -> url end)
   end
 
