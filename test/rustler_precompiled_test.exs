@@ -968,7 +968,7 @@ defmodule RustlerPrecompiledTest do
     end
   end
 
-  describe "available NIFs and download them" do
+  describe "get NIFs from metadata and download them" do
     setup do
       root_path = File.cwd!()
       nif_fixtures_dir = Path.join(root_path, "test/fixtures")
@@ -979,7 +979,7 @@ defmodule RustlerPrecompiledTest do
     end
 
     @tag :tmp_dir
-    test "a project downloading precompiled NIFs", %{
+    test "downloading precompiled NIFs for publishing a package", %{
       tmp_dir: tmp_dir,
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
