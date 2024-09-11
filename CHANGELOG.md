@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix return of `available_nifs/1`. It was returning only URLs.
+
+- Fix the "rustler_precompiled.download" mix task to use the correct
+  function for the download of artifacts.
+
+### Changed
+
+- Print SHA256 of artifacts when downloading them from the mix task.
+
 ## [0.8.0] - 2024-08-28
 
 ### Added

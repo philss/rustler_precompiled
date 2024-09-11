@@ -53,21 +53,21 @@ defmodule Mix.Tasks.RustlerPrecompiled.Download do
         )
     end
 
-    urls =
+    nifs_with_urls =
       cond do
         options[:all] ->
-          RustlerPrecompiled.available_nif_urls(module)
+          RustlerPrecompiled.available_nifs(module)
 
         options[:only_local] ->
-          RustlerPrecompiled.current_target_nif_urls(module)
+          RustlerPrecompiled.current_target_nifs(module)
 
         true ->
           raise "you need to specify either \"--all\" or \"--only-local\" flags"
       end
 
-    result = RustlerPrecompiled.download_nif_artifacts_with_checksums!(urls, options)
+    result = RustlerPrecompiled.download_nif_artifacts_with_checksums!(nifs_with_urls, options)
 
-    if options[:print] do
+    if Keyword.get(options, :print, true) do
       result
       |> Enum.map(fn map ->
         {Path.basename(Map.fetch!(map, :path)), Map.fetch!(map, :checksum)}

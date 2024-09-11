@@ -291,10 +291,10 @@ defmodule RustlerPrecompiled do
     nif_module
     |> metadata_file()
     |> read_map_from_file()
-    |> nif_urls_from_metadata()
+    |> nifs_from_metadata()
     |> case do
-      {:ok, urls} ->
-        urls
+      {:ok, nifs_with_urls} ->
+        nifs_with_urls
 
       {:error, wrong_meta} ->
         raise "metadata about current target for the module #{inspect(nif_module)} is not available. " <>
@@ -956,12 +956,12 @@ defmodule RustlerPrecompiled do
   # Download a list of files from URLs and calculate its checksum.
   # Returns a list with details of the download and the checksum of each file.
   @doc false
-  def download_nif_artifacts_with_checksums!(urls, options \\ []) do
+  def download_nif_artifacts_with_checksums!(nifs_with_urls, options \\ []) do
     ignore_unavailable? = Keyword.get(options, :ignore_unavailable, false)
     attempts = max_retries(options)
 
     download_results =
-      for {lib_name, url} <- urls,
+      for {lib_name, url} <- nifs_with_urls,
           do: {lib_name, with_retry(fn -> download_nif_artifact(url) end, attempts)}
 
     cache_dir = cache_dir("precompiled_nifs")
