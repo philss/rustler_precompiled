@@ -968,6 +968,71 @@ defmodule RustlerPrecompiledTest do
     end
   end
 
+  describe "get NIFs from metadata and download them" do
+    setup do
+      root_path = File.cwd!()
+      nif_fixtures_dir = Path.join(root_path, "test/fixtures")
+      checksum_sample_file = Path.join(nif_fixtures_dir, "checksum-sample-file.exs")
+      checksum_sample = File.read!(checksum_sample_file)
+
+      {:ok, nif_fixtures_dir: nif_fixtures_dir, checksum_sample: checksum_sample}
+    end
+
+    @tag :tmp_dir
+    test "downloading precompiled NIFs for publishing a package", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open()
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect_once(bypass, fn conn ->
+          file_name = List.last(conn.path_info)
+          file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          Plug.Conn.resp(conn, 200, file)
+        end)
+
+        result =
+          capture_log(fn ->
+            config =
+              RustlerPrecompiled.Config.new(
+                otp_app: :rustler_precompiled,
+                module: RustlerPrecompilationExample.Native,
+                base_cache_dir: tmp_dir,
+                base_url: "http://localhost:#{bypass.port}/download",
+                version: "0.2.0",
+                crate: "example",
+                targets: @available_targets,
+                nif_versions: @default_nif_versions,
+                force_build: false
+              )
+
+            {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+
+            assert {:ok, nifs_with_urls} = RustlerPrecompiled.nifs_from_metadata(metadata)
+
+            assert [{lib_name, {url, []}} = first | _] = nifs_with_urls
+
+            assert "libexample" <> _ = lib_name
+            assert "http://localhost" <> _ = url
+
+            results =
+              RustlerPrecompiled.download_nif_artifacts_with_checksums!([first], all: true)
+
+            assert [%{path: _, lib_name: _, checksum: _, checksum_algo: _}] = results
+          end)
+
+        assert result =~ "Downloading"
+        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "NIF cached at"
+      end)
+    end
+  end
+
   describe "nif_urls_from_metadata/1" do
     test "builds a list of tar gz urls and its variants" do
       base_url =
