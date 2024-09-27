@@ -924,12 +924,13 @@ defmodule RustlerPrecompiled do
     end
 
     # https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/inets
-    cacertfile = CAStore.file_path() |> String.to_charlist()
+    # respects the user provided ca certs via Hex env var
+    cacertfile = System.get_env("HEX_CACERTS_PATH", CAStore.file_path())
 
     http_options = [
       ssl: [
         verify: :verify_peer,
-        cacertfile: cacertfile,
+        cacertfile: cacertfile |> String.to_charlist(),
         # We need to increase depth because the default value is 1.
         # See: https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
         depth: 3,
