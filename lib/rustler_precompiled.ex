@@ -925,13 +925,7 @@ defmodule RustlerPrecompiled do
 
     # https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/inets
     # respects the user provided ca certs via Hex env var
-    cacertfile = System.get_env("HEX_CACERTS_PATH")
-
-    if cacertfile do
-      cacertfile
-    else
-      CAStore.file_path()
-    end
+    cacertfile = System.get_env("HEX_CACERTS_PATH", CAStore.file_path())
 
     http_options = [
       ssl: [
