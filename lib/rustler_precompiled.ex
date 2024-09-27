@@ -109,6 +109,9 @@ defmodule RustlerPrecompiled do
 
     * `HTTPS_PROXY` or `https_proxy` - Sets the HTTPS proxy configuration.
 
+    * `HEX_CACERTS_PATH` - Sets the path for a custom CA certificates file.
+      If unset, defaults to `CAStore.file_path/0`.
+
     * `MIX_XDG` - If present, sets the OS as `:linux` for the `:filename.basedir/3` when getting
       an user cache dir.
 
