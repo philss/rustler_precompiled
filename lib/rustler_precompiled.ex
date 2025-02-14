@@ -967,6 +967,26 @@ defmodule RustlerPrecompiled do
     end
   end
 
+  defp get_checksum(true = _checksum_only?, body) do
+    body
+    |> String.split(" ", trim: true)
+    |> hd()
+  end
+
+  defp get_checksum(false = _checksum_only?, body) do
+    @checksum_algo
+    |> :crypto.hash(body)
+    |> Base.encode16(case: :lower)
+  end
+
+  defp save_nif_artifact(true = _checksum_only?, _path, _body) do
+    :ok
+  end
+
+  defp save_nif_artifact(false = _checksum_only?, path, body) do
+    File.write(path, body)
+  end
+
   # Download a list of files from URLs and calculate its checksum.
   # Returns a list with details of the download and the checksum of each file.
   @doc false
@@ -991,14 +1011,9 @@ defmodule RustlerPrecompiled do
     Enum.flat_map(download_results, fn result ->
       with {:download, {lib_name, download_result}} <- {:download, result},
            {:download_result, {:ok, body}} <- {:download_result, download_result},
-           checksum <-
-             if(checksum_only?,
-               do: hd(String.split(body, " ", trim: true)),
-               else: Base.encode16(:crypto.hash(@checksum_algo, body), case: :lower)
-             ),
+           checksum <- get_checksum(checksum_only?, body),
            path <- Path.join(cache_dir, lib_name),
-           {:file, :ok} <-
-             if(checksum_only?, do: {:file, :ok}, else: {:file, File.write(path, body)}) do
+           {:file, :ok} <- save_nif_artifact(checksum_only?, path, body) do
         Logger.debug(
           "NIF cached at #{path} with checksum #{inspect(checksum)} (#{@checksum_algo})"
         )
