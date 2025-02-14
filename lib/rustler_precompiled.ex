@@ -899,11 +899,21 @@ defmodule RustlerPrecompiled do
     tar_gz_file_url({base_url, []}, file_name)
   end
 
-  defp download_nif_artifact(url) when is_binary(url) do
-    download_nif_artifact({url, []})
+  defp download_nif_artifact(url, opts) when is_binary(url) do
+    download_nif_artifact({url, []}, opts)
   end
 
-  defp download_nif_artifact({url, request_headers}) do
+  defp download_nif_artifact({url, request_headers}, opts) do
+    checksum_only? = Keyword.get(opts, :checksum_only?, false)
+    checksum_algo = Keyword.get(opts, :checksum_algo, @checksum_algo)
+
+    url =
+      if checksum_only? do
+        "#{url}.#{checksum_algo}"
+      else
+        url
+      end
+
     url = String.to_charlist(url)
     Logger.debug("Downloading NIF from #{url}")
 
@@ -962,11 +972,18 @@ defmodule RustlerPrecompiled do
   @doc false
   def download_nif_artifacts_with_checksums!(nifs_with_urls, options \\ []) do
     ignore_unavailable? = Keyword.get(options, :ignore_unavailable, false)
+    checksum_only? = Keyword.get(options, :checksum_only, false)
     attempts = max_retries(options)
+
+    download_opts = [
+      checksum_algo: @checksum_algo,
+      checksum_only?: checksum_only?
+    ]
 
     download_results =
       for {lib_name, url} <- nifs_with_urls,
-          do: {lib_name, with_retry(fn -> download_nif_artifact(url) end, attempts)}
+          do:
+            {lib_name, with_retry(fn -> download_nif_artifact(url, download_opts) end, attempts)}
 
     cache_dir = cache_dir("precompiled_nifs")
     :ok = File.mkdir_p(cache_dir)
@@ -974,11 +991,14 @@ defmodule RustlerPrecompiled do
     Enum.flat_map(download_results, fn result ->
       with {:download, {lib_name, download_result}} <- {:download, result},
            {:download_result, {:ok, body}} <- {:download_result, download_result},
-           hash <- :crypto.hash(@checksum_algo, body),
+           checksum <-
+             if(checksum_only?,
+               do: hd(String.split(body, " ", trim: true)),
+               else: Base.encode16(:crypto.hash(@checksum_algo, body), case: :lower)
+             ),
            path <- Path.join(cache_dir, lib_name),
-           {:file, :ok} <- {:file, File.write(path, body)} do
-        checksum = Base.encode16(hash, case: :lower)
-
+           {:file, :ok} <-
+             if(checksum_only?, do: {:file, :ok}, else: {:file, File.write(path, body)}) do
         Logger.debug(
           "NIF cached at #{path} with checksum #{inspect(checksum)} (#{@checksum_algo})"
         )
