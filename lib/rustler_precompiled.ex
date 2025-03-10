@@ -1056,9 +1056,10 @@ defmodule RustlerPrecompiled do
       :ok
     else
       dir = Path.dirname(metadata_file)
-      :ok = File.mkdir_p(dir)
 
-      File.write(metadata_file, inspect(metadata, limit: :infinity, pretty: true))
+      with :ok <- File.mkdir_p(dir) do
+        File.write(metadata_file, inspect(metadata, limit: :infinity, pretty: true))
+      end
     end
   end
 
