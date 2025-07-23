@@ -13,6 +13,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       aarch64-apple-ios-macabi
       aarch64-apple-ios-sim
       aarch64-apple-tvos
+      aarch64-fuchsia
       aarch64-apple-tvos-sim
       aarch64-apple-visionos
       aarch64-apple-visionos-sim
@@ -72,6 +73,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       armv6-unknown-freebsd
       armv6-unknown-netbsd-eabihf
       armv6k-nintendo-3ds
+      armv7-apple-ios
       armv7-linux-androideabi
       armv7-rtems-eabihf
       armv7-sony-vita-newlibeabihf
@@ -96,6 +98,8 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       armv7r-none-eabi
       armv7r-none-eabihf
       armv7s-apple-ios
+      asmjs-unknown-emscripten
+      avr-unknown-gnu-atmega328
       armv8r-none-eabihf
       avr-none
       bpfeb-unknown-none
@@ -105,6 +109,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       hexagon-unknown-linux-musl
       hexagon-unknown-none-elf
       i386-apple-ios
+      i586-pc-windows-msvc
       i586-unknown-linux-gnu
       i586-unknown-linux-musl
       i586-unknown-netbsd
@@ -242,6 +247,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       thumbv8m.main-nuttx-eabihf
       wasm32-unknown-emscripten
       wasm32-unknown-unknown
+      wasm32-wasi
       wasm32-wali-linux-musl
       wasm32-wasip1
       wasm32-wasip1-threads
@@ -254,6 +260,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       x86_64-apple-tvos
       x86_64-apple-watchos-sim
       x86_64-fortanix-unknown-sgx
+      x86_64-fuchsia
       x86_64-linux-android
       x86_64-lynx-lynxos178
       x86_64-pc-cygwin
@@ -264,6 +271,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       x86_64-pc-windows-gnu
       x86_64-pc-windows-gnullvm
       x86_64-pc-windows-msvc
+      x86_64-sun-solaris
       x86_64-unikraft-linux-musl
       x86_64-unknown-dragonfly
       x86_64-unknown-freebsd
@@ -280,6 +288,7 @@ defmodule RustlerPrecompiled.Config.AvailableTargets do
       x86_64-unknown-linux-ohos
       x86_64-unknown-netbsd
       x86_64-unknown-none
+      x86_64-unknown-none-linuxkernel
       x86_64-unknown-openbsd
       x86_64-unknown-redox
       x86_64-unknown-trusty
