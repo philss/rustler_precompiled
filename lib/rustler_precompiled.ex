@@ -910,38 +910,33 @@ defmodule RustlerPrecompiled do
     {:ok, _} = Application.ensure_all_started(:inets)
     {:ok, _} = Application.ensure_all_started(:ssl)
 
-    proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy")
+    http_proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy")
+    http_proxy_auth = configure_proxy(http_proxy, :proxy, "HTTP_PROXY")
 
-    with true <- is_binary(proxy),
-         %{host: host, port: port} when is_binary(host) and is_integer(port) <- URI.parse(proxy) do
-      Logger.debug("Using HTTP_PROXY: #{proxy}")
-      :httpc.set_options([{:proxy, {{String.to_charlist(host), port}, []}}])
-    end
+    https_proxy = System.get_env("HTTPS_PROXY") || System.get_env("https_proxy")
+    https_proxy_auth = configure_proxy(https_proxy, :https_proxy, "HTTPS_PROXY")
 
-    proxy = System.get_env("HTTPS_PROXY") || System.get_env("https_proxy")
-
-    with true <- is_binary(proxy),
-         %{host: host, port: port} when is_binary(host) and is_integer(port) <- URI.parse(proxy) do
-      Logger.debug("Using HTTPS_PROXY: #{proxy}")
-      :httpc.set_options([{:https_proxy, {{String.to_charlist(host), port}, []}}])
-    end
+    # Use HTTPS proxy auth if available, otherwise fall back to HTTP proxy auth
+    proxy_auth = https_proxy_auth || http_proxy_auth
 
     # https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/inets
     # respects the user provided ca certs via Hex env var
     cacertfile = System.get_env("HEX_CACERTS_PATH", CAStore.file_path())
 
-    http_options = [
-      ssl: [
-        verify: :verify_peer,
-        cacertfile: cacertfile |> String.to_charlist(),
-        # We need to increase depth because the default value is 1.
-        # See: https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
-        depth: 3,
-        customize_hostname_check: [
-          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+    http_options =
+      [
+        ssl: [
+          verify: :verify_peer,
+          cacertfile: cacertfile |> String.to_charlist(),
+          # We need to increase depth because the default value is 1.
+          # See: https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
+          depth: 3,
+          customize_hostname_check: [
+            match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+          ]
         ]
       ]
-    ]
+      |> maybe_add_proxy_auth(proxy_auth)
 
     options = [body_format: :binary]
 
@@ -954,6 +949,48 @@ defmodule RustlerPrecompiled do
 
       other ->
         {:error, "couldn't fetch NIF from #{url}: #{inspect(other)}"}
+    end
+  end
+
+  defp configure_proxy(proxy, proxy_type, env_name) when is_binary(proxy) do
+    case URI.parse(proxy) do
+      %{host: host, port: port, userinfo: userinfo}
+      when is_binary(host) and is_integer(port) ->
+        Logger.debug("Using #{env_name}: #{redact_userinfo(proxy)}")
+        :httpc.set_options([{proxy_type, {{String.to_charlist(host), port}, []}}])
+        parse_proxy_auth(userinfo)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp configure_proxy(_proxy, _proxy_type, _env_name), do: nil
+
+  @doc false
+  def parse_proxy_auth(nil), do: nil
+  def parse_proxy_auth(""), do: nil
+
+  def parse_proxy_auth(userinfo) do
+    case String.split(userinfo, ":", parts: 2) do
+      [user, pass] -> {String.to_charlist(user), String.to_charlist(pass)}
+      [user] -> {String.to_charlist(user), ~c""}
+    end
+  end
+
+  defp maybe_add_proxy_auth(http_options, nil), do: http_options
+
+  defp maybe_add_proxy_auth(http_options, proxy_auth),
+    do: [{:proxy_auth, proxy_auth} | http_options]
+
+  @doc false
+  def redact_userinfo(url) do
+    uri = URI.parse(url)
+
+    if uri.userinfo do
+      %{uri | userinfo: "[REDACTED]"} |> to_string()
+    else
+      url
     end
   end
 

@@ -1167,4 +1167,63 @@ defmodule RustlerPrecompiledTest do
     {"http://localhost:1234/download?file_name=#{file_name}&foo=bar",
      [{"authorization", "Token 123"}]}
   end
+
+  describe "parse_proxy_auth/1" do
+    test "returns nil for nil input" do
+      assert RustlerPrecompiled.parse_proxy_auth(nil) == nil
+    end
+
+    test "returns nil for empty string" do
+      assert RustlerPrecompiled.parse_proxy_auth("") == nil
+    end
+
+    test "parses username and password" do
+      assert RustlerPrecompiled.parse_proxy_auth("user:password") == {~c"user", ~c"password"}
+    end
+
+    test "parses username with empty password" do
+      assert RustlerPrecompiled.parse_proxy_auth("user:") == {~c"user", ~c""}
+    end
+
+    test "parses username only (no colon)" do
+      assert RustlerPrecompiled.parse_proxy_auth("user") == {~c"user", ~c""}
+    end
+
+    test "handles password containing colons" do
+      assert RustlerPrecompiled.parse_proxy_auth("user:pass:word:with:colons") ==
+               {~c"user", ~c"pass:word:with:colons"}
+    end
+
+    test "handles complex JWT-style tokens" do
+      userinfo = "container_name:jwt_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
+
+      assert RustlerPrecompiled.parse_proxy_auth(userinfo) ==
+               {~c"container_name",
+                ~c"jwt_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"}
+    end
+  end
+
+  describe "redact_userinfo/1" do
+    test "redacts userinfo from URL with credentials" do
+      url = "http://user:password@proxy.example.com:8080"
+      assert RustlerPrecompiled.redact_userinfo(url) == "http://[REDACTED]@proxy.example.com:8080"
+    end
+
+    test "returns URL unchanged when no userinfo present" do
+      url = "http://proxy.example.com:8080"
+      assert RustlerPrecompiled.redact_userinfo(url) == url
+    end
+
+    test "redacts complex JWT-style credentials" do
+      url = "http://container:jwt_eyJhbGciOiJIUzI1NiJ9.payload@21.0.0.145:15004"
+      assert RustlerPrecompiled.redact_userinfo(url) == "http://[REDACTED]@21.0.0.145:15004"
+    end
+
+    test "preserves path and query string" do
+      url = "http://user:pass@proxy.example.com:8080/path?query=value"
+
+      assert RustlerPrecompiled.redact_userinfo(url) ==
+               "http://[REDACTED]@proxy.example.com:8080/path?query=value"
+    end
+  end
 end
