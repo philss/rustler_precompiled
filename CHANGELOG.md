@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Drop support for Elixir 1.13 and 1.14. Since those versions are
+  not supported anymore by the core team, they should be avoided.
+
 ## [0.8.4] - 2025-12-08
 
 ### Fixed
