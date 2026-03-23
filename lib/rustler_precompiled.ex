@@ -910,11 +910,18 @@ defmodule RustlerPrecompiled do
     {:ok, _} = Application.ensure_all_started(:inets)
     {:ok, _} = Application.ensure_all_started(:ssl)
 
+    # httpc defaults ipfamily to :inet (IPv4-only). inet6fb4 tries IPv6
+    # first, then falls back to IPv4, so proxy connections work regardless
+    # of whether the proxy resolves to an AAAA or A record.
+    :httpc.set_options(ipfamily: :inet6fb4)
+
+    no_proxy = parse_no_proxy(System.get_env("NO_PROXY") || System.get_env("no_proxy"))
+
     http_proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy")
-    http_proxy_auth = configure_proxy(http_proxy, :proxy, "HTTP_PROXY")
+    http_proxy_auth = configure_proxy(http_proxy, :proxy, "HTTP_PROXY", no_proxy)
 
     https_proxy = System.get_env("HTTPS_PROXY") || System.get_env("https_proxy")
-    https_proxy_auth = configure_proxy(https_proxy, :https_proxy, "HTTPS_PROXY")
+    https_proxy_auth = configure_proxy(https_proxy, :https_proxy, "HTTPS_PROXY", no_proxy)
 
     # Use HTTPS proxy auth if available, otherwise fall back to HTTP proxy auth
     proxy_auth = https_proxy_auth || http_proxy_auth
@@ -952,12 +959,12 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp configure_proxy(proxy, proxy_type, env_name) when is_binary(proxy) do
+  defp configure_proxy(proxy, proxy_type, env_name, no_proxy) when is_binary(proxy) do
     case URI.parse(proxy) do
       %{host: host, port: port, userinfo: userinfo}
       when is_binary(host) and is_integer(port) ->
         Logger.debug("Using #{env_name}: #{redact_userinfo(proxy)}")
-        :httpc.set_options([{proxy_type, {{String.to_charlist(host), port}, []}}])
+        :httpc.set_options([{proxy_type, {{String.to_charlist(host), port}, no_proxy}}])
         parse_proxy_auth(userinfo)
 
       _ ->
@@ -965,7 +972,20 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp configure_proxy(_proxy, _proxy_type, _env_name), do: nil
+  defp configure_proxy(_proxy, _proxy_type, _env_name, _no_proxy), do: nil
+
+  @doc false
+  def parse_no_proxy(nil), do: []
+  def parse_no_proxy(""), do: []
+
+  def parse_no_proxy(no_proxy) do
+    no_proxy
+    |> String.split(",")
+    |> Enum.map(fn entry ->
+      entry |> String.trim() |> String.trim_leading(".") |> String.to_charlist()
+    end)
+    |> Enum.reject(&(&1 == ~c""))
+  end
 
   @doc false
   def parse_proxy_auth(nil), do: nil
