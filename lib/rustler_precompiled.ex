@@ -141,6 +141,10 @@ defmodule RustlerPrecompiled do
       configuration for all packages, and will force the build for them all.
       You can set the `:force_build_all` configuration to `true` to have the same effect.
 
+    * `RUSTLER_PRECOMPILED_IPFAMILY` - Controls the IP protocol used by the HTTP client when downloading
+      NIF artifacts. Valid values: `"inet"` (IPv4 only, default), `"inet6"` (IPv6 only),
+      `"inet6fb4"` (try IPv6 first, fall back to IPv4).
+
   Note that all packages using `RustlerPrecompiled` will be affected by these environment variables.
 
   For more details about Nerves env vars, see https://hexdocs.pm/nerves/environment-variables.html
