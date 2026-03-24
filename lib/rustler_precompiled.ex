@@ -141,6 +141,10 @@ defmodule RustlerPrecompiled do
       configuration for all packages, and will force the build for them all.
       You can set the `:force_build_all` configuration to `true` to have the same effect.
 
+    * `RUSTLER_PRECOMPILED_IPFAMILY` - Controls the IP protocol used by the HTTP client when downloading
+      NIF artifacts. Valid values: `"inet"` (IPv4 only, default), `"inet6"` (IPv6 only),
+      `"inet6fb4"` (try IPv6 first, fall back to IPv4).
+
   Note that all packages using `RustlerPrecompiled` will be affected by these environment variables.
 
   For more details about Nerves env vars, see https://hexdocs.pm/nerves/environment-variables.html
@@ -910,11 +914,16 @@ defmodule RustlerPrecompiled do
     {:ok, _} = Application.ensure_all_started(:inets)
     {:ok, _} = Application.ensure_all_started(:ssl)
 
+    ipfamily = parse_ipfamily(System.get_env("RUSTLER_PRECOMPILED_IPFAMILY"))
+    :httpc.set_options(ipfamily: ipfamily)
+
+    no_proxy = parse_no_proxy(System.get_env("NO_PROXY") || System.get_env("no_proxy"))
+
     http_proxy = System.get_env("HTTP_PROXY") || System.get_env("http_proxy")
-    http_proxy_auth = configure_proxy(http_proxy, :proxy, "HTTP_PROXY")
+    http_proxy_auth = configure_proxy(http_proxy, :proxy, "HTTP_PROXY", no_proxy)
 
     https_proxy = System.get_env("HTTPS_PROXY") || System.get_env("https_proxy")
-    https_proxy_auth = configure_proxy(https_proxy, :https_proxy, "HTTPS_PROXY")
+    https_proxy_auth = configure_proxy(https_proxy, :https_proxy, "HTTPS_PROXY", no_proxy)
 
     # Use HTTPS proxy auth if available, otherwise fall back to HTTP proxy auth
     proxy_auth = https_proxy_auth || http_proxy_auth
@@ -952,12 +961,12 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp configure_proxy(proxy, proxy_type, env_name) when is_binary(proxy) do
+  defp configure_proxy(proxy, proxy_type, env_name, no_proxy) when is_binary(proxy) do
     case URI.parse(proxy) do
       %{host: host, port: port, userinfo: userinfo}
       when is_binary(host) and is_integer(port) ->
         Logger.debug("Using #{env_name}: #{redact_userinfo(proxy)}")
-        :httpc.set_options([{proxy_type, {{String.to_charlist(host), port}, []}}])
+        :httpc.set_options([{proxy_type, {{String.to_charlist(host), port}, no_proxy}}])
         parse_proxy_auth(userinfo)
 
       _ ->
@@ -965,7 +974,35 @@ defmodule RustlerPrecompiled do
     end
   end
 
-  defp configure_proxy(_proxy, _proxy_type, _env_name), do: nil
+  defp configure_proxy(_proxy, _proxy_type, _env_name, _no_proxy), do: nil
+
+  @doc false
+  def parse_ipfamily(nil), do: :inet
+  def parse_ipfamily("inet"), do: :inet
+  def parse_ipfamily("inet6"), do: :inet6
+  def parse_ipfamily("inet6fb4"), do: :inet6fb4
+
+  def parse_ipfamily(other) do
+    Logger.warning(
+      "Ignoring invalid RUSTLER_PRECOMPILED_IPFAMILY=#{inspect(other)}, using inet. " <>
+        "Valid values: inet, inet6, inet6fb4"
+    )
+
+    :inet
+  end
+
+  @doc false
+  def parse_no_proxy(nil), do: []
+  def parse_no_proxy(""), do: []
+
+  def parse_no_proxy(no_proxy) do
+    no_proxy
+    |> String.split(",")
+    |> Enum.map(fn entry ->
+      entry |> String.trim() |> String.trim_leading(".") |> String.to_charlist()
+    end)
+    |> Enum.reject(&(&1 == ~c""))
+  end
 
   @doc false
   def parse_proxy_auth(nil), do: nil
