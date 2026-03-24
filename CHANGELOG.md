@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Rely on cert stores provided by Erlang/OTP +25.
 
-  This change removes the hard dependency on `castore` package in favour
+  This change removes the dependency on `castore` package in favour
   of loading the cert stores from OTP. In case an older OTP version is
   in use, a warning is emitted.
 
