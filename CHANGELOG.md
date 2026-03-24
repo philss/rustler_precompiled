@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drop support for Elixir 1.13 and 1.14. Since those versions are
   not supported anymore by the core team, they should be avoided.
 
+- Rely on cert stores provided by Erlang/OTP +25.
+
+  This change removes the hard dependency on `castore` package in favour
+  of loading the cert stores from OTP. In case an older OTP version is
+  in use, a warning is emitted.
+
+  Notice that loading a cert file from the `HEX_CACERTS_PATH` env var
+  is still supported and has precedence over the OTP cert stores.
+
 ## [0.8.4] - 2025-12-08
 
 ### Fixed
