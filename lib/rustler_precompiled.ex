@@ -109,6 +109,10 @@ defmodule RustlerPrecompiled do
 
     * `HTTPS_PROXY` or `https_proxy` - Sets the HTTPS proxy configuration.
 
+    * `NO_PROXY` - In case a proxy is set with the described env vars from above, this
+      option will make `:httpc` skip the proxy for the given hosts.
+      Use commas (,) to configure multiple hosts.
+
     * `HEX_CACERTS_PATH` - Sets the path for a custom CA certificates file.
       If unset, defaults to `:public.cacerts_get/0` (OTP >= 25) if available.
       In case it's running on an old OTP version, a warning is emitted.

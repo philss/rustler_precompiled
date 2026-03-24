@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add support for the `NO_PROXY` environment variable.
+  With this env var, you can filter out hosts to avoid using
+  the configured proxy. Accepts a list of hosts separated
+  by a comma `","`.
+
+- Add support for choosing the IP version to use, therefore supporting IPv6.
+  The environment variable `RUSTLER_PRECOMPILED_IPFAMILY` can be set to:
+  * "inet" - for IPv4 only. This is the default option.
+  * "inet6" - for IPv6 only.
+  * "inet6fb4" - for trying IPv6 first, and then fallback to IPv4.
+
 ### Changed
 
 - Drop support for Elixir 1.13 and 1.14. Since those versions are
