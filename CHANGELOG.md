@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add support for the `NO_PROXY` environment variable.
+  With this env var, you can filter out hosts to avoid using
+  the configured proxy. Accepts a list of hosts separated
+  by a comma `","`.
+
+- Add support for choosing the IP version to use, therefore supporting IPv6.
+  The environment variable `RUSTLER_PRECOMPILED_IPFAMILY` can be set to:
+  * "inet" - for IPv4 only. This is the default option.
+  * "inet6" - for IPv6 only.
+  * "inet6fb4" - for trying IPv6 first, and then fallback to IPv4.
+
+### Changed
+
+- Drop support for Elixir 1.13 and 1.14. Since those versions are
+  not supported anymore by the core team, they should be avoided.
+
+- Rely on cert stores provided by Erlang/OTP +25.
+
+  This change removes the dependency on `castore` package in favour
+  of loading the cert stores from OTP. In case an older OTP version is
+  in use, a warning is emitted.
+
+  Notice that loading a cert file from the `HEX_CACERTS_PATH` env var
+  is still supported and has precedence over the OTP cert stores.
+
 ## [0.8.4] - 2025-12-08
 
 ### Fixed
