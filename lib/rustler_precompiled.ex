@@ -1059,9 +1059,10 @@ defmodule RustlerPrecompiled do
     No certificate trust store was found.
 
     A certificate trust store is required in
-    order to download locales for your configuration.
+    order to download precompiled artifacts for
+    one of your system's library.
     Since rustler_precompiled could not detect a system
-    installed certificate trust store one of the
+    installed certificate trust store, one of the
     following actions may be taken:
 
     1. Specify the location of a certificate trust store

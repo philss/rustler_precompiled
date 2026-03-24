@@ -12,6 +12,7 @@ defmodule RustlerPrecompiled.MixProject do
       start_permanent: Mix.env() == :prod,
       description: "Make the usage of precompiled NIFs easier for projects using Rustler",
       package: package(),
+      test_ignore_filters: [&String.starts_with?(&1, "test/fixtures")],
       docs: docs(),
       deps: deps()
     ]
