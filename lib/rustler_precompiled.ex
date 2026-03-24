@@ -910,10 +910,8 @@ defmodule RustlerPrecompiled do
     {:ok, _} = Application.ensure_all_started(:inets)
     {:ok, _} = Application.ensure_all_started(:ssl)
 
-    # httpc defaults ipfamily to :inet (IPv4-only). inet6fb4 tries IPv6
-    # first, then falls back to IPv4, so proxy connections work regardless
-    # of whether the proxy resolves to an AAAA or A record.
-    :httpc.set_options(ipfamily: :inet6fb4)
+    ipfamily = parse_ipfamily(System.get_env("RUSTLER_PRECOMPILED_IPFAMILY"))
+    :httpc.set_options(ipfamily: ipfamily)
 
     no_proxy = parse_no_proxy(System.get_env("NO_PROXY") || System.get_env("no_proxy"))
 
@@ -973,6 +971,21 @@ defmodule RustlerPrecompiled do
   end
 
   defp configure_proxy(_proxy, _proxy_type, _env_name, _no_proxy), do: nil
+
+  @doc false
+  def parse_ipfamily(nil), do: :inet
+  def parse_ipfamily("inet"), do: :inet
+  def parse_ipfamily("inet6"), do: :inet6
+  def parse_ipfamily("inet6fb4"), do: :inet6fb4
+
+  def parse_ipfamily(other) do
+    Logger.warning(
+      "Ignoring invalid RUSTLER_PRECOMPILED_IPFAMILY=#{inspect(other)}, using inet. " <>
+        "Valid values: inet, inet6, inet6fb4"
+    )
+
+    :inet
+  end
 
   @doc false
   def parse_no_proxy(nil), do: []

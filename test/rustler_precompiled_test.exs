@@ -1168,6 +1168,24 @@ defmodule RustlerPrecompiledTest do
      [{"authorization", "Token 123"}]}
   end
 
+  describe "parse_ipfamily/1" do
+    test "defaults to inet when nil" do
+      assert RustlerPrecompiled.parse_ipfamily(nil) == :inet
+    end
+
+    test "parses valid values" do
+      assert RustlerPrecompiled.parse_ipfamily("inet") == :inet
+      assert RustlerPrecompiled.parse_ipfamily("inet6") == :inet6
+      assert RustlerPrecompiled.parse_ipfamily("inet6fb4") == :inet6fb4
+    end
+
+    test "falls back to inet and warns on invalid value" do
+      assert ExUnit.CaptureLog.capture_log(fn ->
+               assert RustlerPrecompiled.parse_ipfamily("bogus") == :inet
+             end) =~ "Ignoring invalid RUSTLER_PRECOMPILED_IPFAMILY"
+    end
+  end
+
   describe "parse_no_proxy/1" do
     test "returns empty list for nil" do
       assert RustlerPrecompiled.parse_no_proxy(nil) == []
