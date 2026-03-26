@@ -2,43 +2,60 @@
 
 Rustler provides an easy way write safer NIFs for our OTP applications.
 Rustler Precompiled makes the usage of NIFs created with Rustler easier,
-so people don't need to have the Rust toolchain installed in order to use your projects.
+so people don't need to have the Rust toolchain installed in order to use their projects.
 
-When installing your package, the users will see Rustler Precompiled downloading
-the precompiled artifact alongside with its SHA256 representing the fingerprint
+When users install your package that is using this library, they will see Rustler Precompiled
+downloading the precompiled artifact alongside with its SHA256 representing the fingerprint
 of that file.
 
 The precompilation happens in a CI server, always in a transparent way, and
 the Hex package published should always include a checksum file to ensure
 the NIFs stays the same, therefore mitigating supply chain attacks.
 
-In this guide I will show you how to prepare your project to use this feature.
+In this guide I will show you how to prepare your project to use Rustler Precompiled.
 
 ## Prepare for the build
 
 Most of the work is done in the CI server. In this example we are going to use GitHub Actions.
 
 The GH Actions service has the benefit of hosting artifacts for releases and make them
-public available.
+public available. This is important, because it's where the library is going to download
+the artifacts from.
 
 ### Configure Github Actions
 
-In order for the workflow to succeed, read and write permissions will need to be enabled for the
+In order for the workflow to succeed, some "write permissions" will need to be enabled for the
 repository.
+The best way to do that is by using the `permissions:` key in your workflow file. This is effectively
+changing the permissions of the `GITHUB_TOKEN` used in the workflow (or for an individual job).
 
-1. Settings > Actions > General
-2. Workflow permissions
-3. Check the box "Read and write permissions"
+In your job section, add the following:
+
+```yaml
+permissions:
+  # For creating a new release.
+  contents: write
+  # The following are needed for the "actions/attest" GH Action.
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+```
+
+The permissions related to the "actions/attest" GitHub Action are optional if you don't plan to use attestations,
+but they enhance the security a little bit.
+Read the [Artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
+docs for more details.
 
 ### Configure Targets
 
 Usually we want to build for the most popular targets and the minimum NIF version supported.
 
 NIF versions are more stable than OTP versions because they usually change only after two major
-releases of OTP. But older versions are compatible with newer versions if they have the same MAJOR
+releases of Erlang/OTP. But older versions are compatible with newer versions if they have the same MAJOR
 number. For example, the NIF `2.15` is compatible with `2.16` and `2.17`. So you only need to
-compile for `2.15` if you want to support these versions. But in case a new feature from the
-newer versions is needed, then you can build for both versions as well.
+compile for `2.15` if you want to support these versions.
+
+In case a new feature from the newer versions is needed, then you can build for both versions as well.
 See [the trobleshooting](TROUBLESHOOTING.md) document to find how to do that.
 
 For this guide our targets will be the following:
@@ -53,13 +70,13 @@ In summary the build matrix looks like this:
 matrix:
   nif: ["2.15"]
   job:
-    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true }
-    - { target: aarch64-apple-darwin        , os: macos-12      }
-    - { target: x86_64-apple-darwin         , os: macos-12      }
-    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04  }
-    - { target: x86_64-unknown-linux-musl   , os: ubuntu-20.04 , use-cross: true }
-    - { target: x86_64-pc-windows-gnu       , os: windows-2019  }
-    - { target: x86_64-pc-windows-msvc      , os: windows-2019  }
+    - { target: aarch64-unknown-linux-gnu   , os: ubuntu-22.04 , use-cross: true }
+    - { target: aarch64-apple-darwin        , os: macos-15      }
+    - { target: x86_64-apple-darwin         , os: macos-15-intel }
+    - { target: x86_64-unknown-linux-gnu    , os: ubuntu-22.04  }
+    - { target: x86_64-unknown-linux-musl   , os: ubuntu-22.04 , use-cross: true }
+    - { target: x86_64-pc-windows-gnu       , os: windows-2022  }
+    - { target: x86_64-pc-windows-msvc      , os: windows-2022  }
 ```
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
@@ -92,10 +109,11 @@ rustflags = [
 lto = true
 ```
 
-For more common configuration needed for popular targets, see the [troubleshooting document](./TROUBLESHOOTING.md).
+For more common configuration needed for other targets, see the [troubleshooting document](./TROUBLESHOOTING.md).
 
 In addition to that, we also need a tool called [`cross`](https://github.com/rust-embedded/cross) that
 makes the build easier for some targets (the ones using `use-cross: true` in our example).
+This tool will be installed automatically by the `rustler-precompiled-action`.
 
 ## The Rustler module
 
@@ -118,7 +136,7 @@ defmodule RustlerPrecompilationExample.Native do
 end
 ```
 
-This example was extracted from the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/lib/rustler_precompilation_example/native.ex) project.
+This example was also extracted from the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/lib/rustler_precompilation_example/native.ex) project.
 RustlerPrecompiled will try to figure out the target and download the correct file for us. This will happen in compile
 time only.
 
@@ -167,6 +185,8 @@ end
 ```
 
 Note: you don't need to track the checksum file in your version control system (git or other).
+Another thing is that you want to make sure that the "target" directory is not released with
+the Hex package. To ensure that, you can remove the directory before releasing: `rm -rf native/my_nif/target`.
 
 For an example, refer to the `mix.exs` file of the [rustler precompilation example](https://github.com/philss/rustler_precompilation_example/blob/main/mix.exs)
 or elixir-nx's [explorer](https://github.com/elixir-nx/explorer/blob/723eea63204e43bc9238d2488fd355f17a1e13f2/mix.exs#L65-L72) library.
