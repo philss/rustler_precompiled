@@ -22,7 +22,7 @@ def deps do
 end
 ```
 
-You would normally keep Rustler listed, but as an optional dependency, because it's only used in development.
+You would normally keep Rustler listed, but as an optional dependency because it's only used in development.
 
 ## License
 
