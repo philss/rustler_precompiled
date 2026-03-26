@@ -109,7 +109,7 @@ rustflags = [
 lto = true
 ```
 
-For more common configuration needed for other targets, see the [troubleshooting document](./TROUBLESHOOTING.md).
+For more common configuration needed for other targets, see the [troubleshooting document](TROUBLESHOOTING.md).
 
 In addition to that, we also need a tool called [`cross`](https://github.com/rust-embedded/cross) that
 makes the build easier for some targets (the ones using `use-cross: true` in our example).
