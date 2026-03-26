@@ -1,16 +1,16 @@
 # Precompilation guide
 
-Rustler provides an easy way to use safer NIFs in OTP applications. But in some
-environments it's harder to use the benefits of the tool because every user
-needs to install the Rust toolchain and compile the project,
-which can take several minutes in some cases.
+Rustler provides an easy way write safer NIFs for our OTP applications.
+Rustler Precompiled makes the usage of NIFs created with Rustler easier,
+so people don't need to have the Rust toolchain installed in order to use your projects.
 
-This changes with the help of the `RustlerPrecompiled` package. Now we can easily
-use precompiled Rustler NIFs from an external source.
+When installing your package, the users will see Rustler Precompiled downloading
+the precompiled artifact alongside with its SHA256 representing the fingerprint
+of that file.
 
 The precompilation happens in a CI server, always in a transparent way, and
 the Hex package published should always include a checksum file to ensure
-the NIFs stays the same, therefore avoiding supply chain attacks.
+the NIFs stays the same, therefore mitigating supply chain attacks.
 
 In this guide I will show you how to prepare your project to use this feature.
 
@@ -37,27 +37,22 @@ Usually we want to build for the most popular targets and the minimum NIF versio
 NIF versions are more stable than OTP versions because they usually change only after two major
 releases of OTP. But older versions are compatible with newer versions if they have the same MAJOR
 number. For example, the NIF `2.15` is compatible with `2.16` and `2.17`. So you only need to
-compile for `2.15` if you want to support these versions. But in case any new feature from the
+compile for `2.15` if you want to support these versions. But in case a new feature from the
 newer versions is needed, then you can build for both versions as well.
-
-In Rustler - starting from v0.29 -, it's possible to control which version of NIF is active by
-configuring cargo features that have this format: `nif_version_MAJOR_MINOR`. So it's possible
-to define features in your project that depends on Rustler features.
-More details are in the "Additional configuration before build".
+See [the trobleshooting](TROUBLESHOOTING.md) document to find how to do that.
 
 For this guide our targets will be the following:
 
 - OS: Linux, Windows, macOS
-- Architectures: `x86_64`, `aarch64` (ARM 64 bits), `arm`
-- NIF versions: `2.15`, `2.16`.
+- Architectures: `x86_64`, `aarch64` (ARM 64 bits)
+- NIF version: `2.15` - this is the default for Rustler since `v0.29`.
 
 In summary the build matrix looks like this:
 
 ```yaml
 matrix:
-  nif: ["2.16", "2.15"]
+  nif: ["2.15"]
   job:
-    - { target: arm-unknown-linux-gnueabihf , os: ubuntu-20.04 , use-cross: true }
     - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true }
     - { target: aarch64-apple-darwin        , os: macos-12      }
     - { target: x86_64-apple-darwin         , os: macos-12      }
@@ -68,6 +63,8 @@ matrix:
 ```
 
 A complete workflow example can be found in the [`rustler_precompilation_example`](https://github.com/philss/rustler_precompilation_example/blob/main/.github/workflows/release.yml) project.
+You can copy that file and modify it with your desired inputs.
+
 That workflow is using a GitHub Action especially made for our goal: [philss/rustler-precompiled-action](https://github.com/philss/rustler-precompiled-action).
 The GitHub Action will deal with the installation of `cross` and the build of the project, naming the files in the correct format.
 
@@ -79,92 +76,26 @@ pipeline](https://github.com/kloeckner-i/mail_parser/blob/f4af5083aec73a47f0e41a
 
 In our build we are going to cross compile our crate project (the Rust code for our NIF) using
 a variety of targets, as we saw in the previous section. For this to work we need to guide the Rust
-compiler in some cases by providing additional configuration in the `.cargo/config` file of our project.
+compiler in some cases by providing additional configuration in the `.cargo/config.toml` file of our project.
 
 Here is an example of that file:
 
 ```toml
-[target.'cfg(target_os = "macos")']
-rustflags = [
-  "-C", "link-arg=-undefined",
-  "-C", "link-arg=dynamic_lookup",
-]
-
-# See https://github.com/rust-lang/rust/issues/59302
+# This is needed for "musl". See https://github.com/rust-lang/rust/issues/59302
 [target.x86_64-unknown-linux-musl]
 rustflags = [
   "-C", "target-feature=-crt-static"
 ]
 
-# Provides a small build size, but takes more time to build.
+# Provides a small build size for the "release" profile, but takes more time to build.
 [profile.release]
 lto = true
 ```
 
-In addition to that, we also use a tool called [`cross`](https://github.com/rust-embedded/cross) that
+For more common configuration needed for popular targets, see the [troubleshooting document](./TROUBLESHOOTING.md).
+
+In addition to that, we also need a tool called [`cross`](https://github.com/rust-embedded/cross) that
 makes the build easier for some targets (the ones using `use-cross: true` in our example).
-
-For projects using Rustler **before v0.29**, we need to tell `cross` to read an environment variable
-from our "host machine", because `cross` uses containers to build our software.
-
-So you need to create the file `Cross.toml` in the NIF directory with the following content:
-
-```toml
-[build.env]
-passthrough = [
-  "RUSTLER_NIF_VERSION"
-]
-```
-
-#### Using features to control NIF version in Rustler v0.29 and above
-
-Since Rustler v0.29, it's possible to control which NIF version is active by using cargo features.
-This is a replacement for the `RUSTLER_NIF_VERSION` env var, that is deprecated in v0.30 of
-Rustler.
-
-If your project does not use anything special from newer NIF versions, then you can declare the
-Rustler dependency like this:
-
-```toml
-[dependencies]
-rustler = { version = "0.29", default-features = false, features = ["derive", "nif_version_2_15"] }
-```
-
-And in the workflow file, you would specify the `nif-version: 2.15` as usual.
-
-But in case you want to have newer features from more recent versions of NIF, you can create
-features for your project that are used to activate rustler features. These features should
-follow the same naming from Rustler, because the CI action is going to use that to activate
-the right feature.
-
-Here is an example of how your `Cargo.toml` would look like:
-
-```toml
-[dependencies]
-rustler = { version = "0.29", default-features = false, features = ["derive"] }
-
-# And then, your features.
-[features]
-default = ["nif_version_2_15"]
-nif_version_2_15 = ["rustler/nif_version_2_15"]
-nif_version_2_16 = ["rustler/nif_version_2_16"]
-nif_version_2_17 = ["rustler/nif_version_2_17"]
-```
-
-In your code, you would use these features - like `nif_version_2_17` - to control how your
-code is going to be compiled. You can hide some features behind these features.
-Even if you don't have anything behind these features, you can still introduce them
-if you want to activate an specific NIF version.
-
-But again, normally it's enough to build for the lowest version supported by the OTP version
-that you are targeting.
-
-The available NIF versions are the following:
-
-* `2.14` - for OTP 21 and above.
-* `2.15` - for OTP 22 and above.
-* `2.16` - for OTP 24 and above.
-* `2.17` - for OTP 26 and above.
 
 ## The Rustler module
 
@@ -192,15 +123,17 @@ RustlerPrecompiled will try to figure out the target and download the correct fi
 time only.
 
 Optionally it's possible to force the compilation by setting an env var, like the example suggests.
-It's also possible to force the build by using a pre release version, like `0.1.0-dev`. The only
-requirement to force the build is to have Rustler declared as a dependency as well:
-`{:rustler, ">= 0.0.0", optional: true}`.
+
+It's also possible to force the build by using a pre release version, like `0.1.0-dev`.
+The only requirement to force the build is to have Rustler declared as a dependency as well:
+
+`{:rustler, ">= 0.0.0", optional: true}`
 
 ## The release flow
 
 ### Generating a checksum file
 
-In a scenario where you need to release a Hex package using precompiled NIFs, you first need to
+When you need to release a Hex package using precompiled NIFs, you first need to
 build the release in the CI, wait for all artifacts to be available and then generate
 the **checksum file** that is **MANDATORY** for your package to work.
 
@@ -222,9 +155,9 @@ defp package do
   [
     files: [
       "lib",
-      "native/example/.cargo",
-      "native/example/src",
-      "native/example/Cargo*",
+      "native/my_nif/.cargo",
+      "native/my_nif/src",
+      "native/my_nif/Cargo*",
       "checksum-*.exs",
       "mix.exs"
     ],
