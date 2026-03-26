@@ -27,7 +27,7 @@ defmodule RustlerPrecompiled.MixProject do
   defp docs do
     [
       main: "RustlerPrecompiled",
-      extras: ["PRECOMPILATION_GUIDE.md", "CHANGELOG.md"],
+      extras: ["PRECOMPILATION_GUIDE.md", "CHANGELOG.md", "TROUBLESHOOTING.md"],
       source_url: @repo,
       source_ref: "v#{@version}"
     ]
@@ -45,7 +45,7 @@ defmodule RustlerPrecompiled.MixProject do
     %{
       licenses: ["Apache-2.0"],
       maintainers: ["Philip Sampaio"],
-      files: ~w(lib mix.exs README.md CHANGELOG.md PRECOMPILATION_GUIDE.md),
+      files: ~w(lib mix.exs README.md CHANGELOG.md PRECOMPILATION_GUIDE.md TROUBLESHOOTING.md),
       links: %{"GitHub" => @repo}
     }
   end
