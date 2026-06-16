@@ -43,6 +43,7 @@ default = ["nif_version_2_15"]
 nif_version_2_15 = ["rustler/nif_version_2_15"]
 nif_version_2_16 = ["rustler/nif_version_2_16"]
 nif_version_2_17 = ["rustler/nif_version_2_17"]
+nif_version_2_18 = ["rustler/nif_version_2_18"]
 ```
 
 In your code, you would use these features - like `nif_version_2_16` - to control how your
@@ -61,6 +62,7 @@ The available NIF versions are the following:
 * `2.15` - for OTP 22 and above.
 * `2.16` - for OTP 24 and above.
 * `2.17` - for OTP 26 and above.
+* `2.18` - for OTP 29 and above.
 
 And the default NIF version activated by Rustler versions is the following:
 

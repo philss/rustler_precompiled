@@ -30,7 +30,7 @@ defmodule RustlerPrecompiled.Config do
     x86_64-unknown-linux-musl
   )
 
-  @available_nif_versions ~w(2.14 2.15 2.16 2.17)
+  @available_nif_versions ~w(2.14 2.15 2.16 2.17 2.18)
   @default_nif_versions ~w(2.15)
 
   def default_targets, do: @default_targets
