@@ -74,6 +74,7 @@ defmodule RustlerPrecompiled do
       * `2.15` - for OTP 22 and above.
       * `2.16` - for OTP 24 and above.
       * `2.17` - for OTP 26 and above.
+      * `2.18` - for OTP 29 and above.
 
       By default the following NIF versions are configured:
 

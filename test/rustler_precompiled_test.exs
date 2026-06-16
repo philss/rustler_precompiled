@@ -243,7 +243,7 @@ defmodule RustlerPrecompiledTest do
       }
 
       error_message =
-        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16\n - 2.17"
+        "precompiled NIF is not available for this NIF version: \"2.10\".\nThe available NIF versions are:\n - 2.14\n - 2.15\n - 2.16\n - 2.17\n - 2.18"
 
       assert {:error, ^error_message} =
                RustlerPrecompiled.target(config, @available_targets, @available_nif_versions)
@@ -1076,6 +1076,8 @@ defmodule RustlerPrecompiledTest do
                  "example-v0.2.0-nif-2.16-x86_64-pc-windows-msvc.dll.tar.gz",
                  "example-v0.2.0-nif-2.17-x86_64-pc-windows-gnu.dll.tar.gz",
                  "example-v0.2.0-nif-2.17-x86_64-pc-windows-msvc.dll.tar.gz",
+                 "example-v0.2.0-nif-2.18-x86_64-pc-windows-gnu.dll.tar.gz",
+                 "example-v0.2.0-nif-2.18-x86_64-pc-windows-msvc.dll.tar.gz",
                  "libexample-v0.2.0-nif-2.14-aarch64-apple-darwin.so.tar.gz",
                  "libexample-v0.2.0-nif-2.14-aarch64-unknown-linux-gnu.so.tar.gz",
                  "libexample-v0.2.0-nif-2.14-aarch64-unknown-linux-musl.so.tar.gz",
@@ -1115,7 +1117,17 @@ defmodule RustlerPrecompiledTest do
                  "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
                  "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
                  "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-gnu.so.tar.gz",
-                 "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-musl.so.tar.gz"
+                 "libexample-v0.2.0-nif-2.17-x86_64-unknown-linux-musl.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-aarch64-apple-darwin.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-aarch64-unknown-linux-gnu.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-aarch64-unknown-linux-musl.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-arm-unknown-linux-gnueabihf.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-riscv64gc-unknown-linux-gnu.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-x86_64-apple-darwin.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-x86_64-unknown-linux-gnu--legacy_cpus.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-x86_64-unknown-linux-gnu--old_glibc.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-x86_64-unknown-linux-gnu.so.tar.gz",
+                 "libexample-v0.2.0-nif-2.18-x86_64-unknown-linux-musl.so.tar.gz"
                ]
                |> Enum.map(fn file_name -> "#{base_url}/#{file_name}" end)
     end
