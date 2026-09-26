@@ -119,9 +119,10 @@ defmodule RustlerPrecompiled.Config do
   # https://github.com/rusterlium/rustler/blob/rustler-0.38.0/rustler_mix/lib/rustler.ex#L114-L146
   defp validate_load_data_fun!(_load_data, nil), do: nil
 
-  defp validate_load_data_fun!(0, {module, function} = load_data_fun) when is_atom(module) and is_atom(function) do
+  defp validate_load_data_fun!(0, {module, function} = load_data_fun)
+       when is_atom(module) and is_atom(function) do
     load_data_fun
-  else
+  end
 
   defp validate_load_data_fun!(0, provided_value) do
     raise """
