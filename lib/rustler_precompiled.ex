@@ -95,6 +95,12 @@ defmodule RustlerPrecompiled do
 
           %{"x86_64-unknown-linux-gnu" => [old_glibc: fn _config -> has_old_glibc?() end]}
 
+    * `:load_data` - Any valid term. This value is passed into the NIF when it is loaded.
+      Defaults to `0`.
+
+    * `:load_data_fun` - A `{module, function}` tuple naming a zero-arity function that
+      returns the load data. Cannot be combined with `:load_data`.
+
   In case "force build" is used, all options except the ones use by RustlerPrecompiled
   are going to be passed down to `Rustler`.
   So if you need to configure the build, check the `Rustler` options.
@@ -198,7 +204,6 @@ defmodule RustlerPrecompiled do
         {:ok, config} ->
           @on_load :load_rustler_precompiled
           @rustler_precompiled_load_from config.load_from
-          @rustler_precompiled_load_data config.load_data
 
           @doc false
           def load_rustler_precompiled do
@@ -212,7 +217,22 @@ defmodule RustlerPrecompiled do
               |> Application.app_dir(path)
               |> to_charlist()
 
-            :erlang.load_nif(load_path, @rustler_precompiled_load_data)
+            :erlang.load_nif(load_path, __rustler_precompiled_load_data__())
+          end
+
+          if config.load_data_fun do
+            @rustler_precompiled_load_data_fun config.load_data_fun
+
+            # Called on load, not at compile time, like `Rustler` does:
+            # https://github.com/rusterlium/rustler/blob/rustler-0.38.0/rustler_mix/lib/rustler.ex#L152-L167
+            defp __rustler_precompiled_load_data__ do
+              {module, function} = @rustler_precompiled_load_data_fun
+              apply(module, function, [])
+            end
+          else
+            @rustler_precompiled_load_data config.load_data
+
+            defp __rustler_precompiled_load_data__, do: @rustler_precompiled_load_data
           end
 
         {:error, precomp_error} ->
@@ -741,7 +761,8 @@ defmodule RustlerPrecompiled do
     result = %{
       load?: true,
       load_from: {name, Path.join("priv/native", lib_name)},
-      load_data: config.load_data
+      load_data: config.load_data,
+      load_data_fun: config.load_data_fun
     }
 
     if File.exists?(cached_tar_gz) do

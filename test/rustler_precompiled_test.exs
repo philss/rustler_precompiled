@@ -775,6 +775,50 @@ defmodule RustlerPrecompiledTest do
     end
   end
 
+  @tag :tmp_dir
+  test "use RustlerPrecompiled calls `load_data_fun` every time the module is loaded", %{
+    tmp_dir: tmp_dir
+  } do
+    nif_fixtures_dir = Path.join(File.cwd!(), "test/fixtures")
+    checksum_sample = File.read!(Path.join(nif_fixtures_dir, "checksum-sample-file.exs"))
+    Process.register(self(), :load_data_fun_test)
+
+    in_tmp(tmp_dir, fn ->
+      File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+      {[{module, binary}], _log} =
+        with_log(fn ->
+          Code.compile_quoted(
+            quote do
+              defmodule RustlerPrecompilationExample.Native do
+                use RustlerPrecompiled,
+                  otp_app: :rustler_precompiled,
+                  crate: "example",
+                  base_url:
+                    "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+                  base_cache_dir: unquote(nif_fixtures_dir),
+                  version: "0.2.0",
+                  force_build: false,
+                  load_data_fun: {RustlerPrecompiledTest.LoadData, :load_data}
+
+                def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
+              end
+            end
+          )
+        end)
+
+      assert_receive :load_data_called
+      assert module.add(1, 2) == 3
+
+      # Loading the same binary again calls it again,
+      # so the data is not fixed at compile time.
+      :code.delete(module)
+      :code.purge(module)
+      assert {:module, ^module} = :code.load_binary(module, ~c"nofile", binary)
+      assert_receive :load_data_called
+    end)
+  end
+
   describe "build_metadata/1" do
     test "builds a valid metadata" do
       config =
@@ -1152,6 +1196,13 @@ defmodule RustlerPrecompiledTest do
       metadata = Map.drop(metadata, [:version])
 
       assert {:error, ^metadata} = RustlerPrecompiled.nif_urls_from_metadata(metadata)
+    end
+  end
+
+  defmodule LoadData do
+    def load_data do
+      send(:load_data_fun_test, :load_data_called)
+      :load_data
     end
   end
 
