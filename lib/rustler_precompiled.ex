@@ -752,8 +752,11 @@ defmodule RustlerPrecompiled do
     cached_tar_gz = Map.fetch!(metadata, :cached_tar_gz)
     cache_dir = Path.dirname(cached_tar_gz)
 
-    file_name = Map.fetch!(metadata, :file_name)
-    lib_file = Path.join(native_dir, file_name)
+    lib_file =
+      metadata
+      |> Map.fetch!(:file_name)
+      |> String.replace_suffix(".tar.gz", "")
+      |> then(&Path.join(native_dir, &1))
 
     base_url = config.base_url
     nif_module = config.module
@@ -766,11 +769,8 @@ defmodule RustlerPrecompiled do
     }
 
     if File.exists?(cached_tar_gz) do
-      # Remove existing NIF file so we don't have processes using it.
-      # See: https://github.com/rusterlium/rustler/blob/46494d261cbedd3c798f584459e42ab7ee6ea1f4/rustler_mix/lib/rustler/compiler.ex#L134
-      File.rm(lib_file)
-
       with :ok <- check_file_integrity(cached_tar_gz, nif_module),
+           :ok <- remove_existing_nif(lib_file),
            :ok <- :erl_tar.extract(cached_tar_gz, [:compressed, cwd: Path.dirname(lib_file)]) do
         Logger.debug("Copying NIF from cache and extracting to #{lib_file}")
         {:ok, result}
@@ -785,12 +785,22 @@ defmodule RustlerPrecompiled do
              with_retry(fn -> download_nif_artifact(tar_gz_url) end, config.max_retries),
            :ok <- File.write(cached_tar_gz, tar_gz),
            :ok <- check_file_integrity(cached_tar_gz, nif_module),
+           :ok <- remove_existing_nif(lib_file),
            :ok <-
              :erl_tar.extract({:binary, tar_gz}, [:compressed, cwd: Path.dirname(lib_file)]) do
         Logger.debug("NIF cached at #{cached_tar_gz} and extracted to #{lib_file}")
 
         {:ok, result}
       end
+    end
+  end
+
+  # Remove existing NIF file so we don't have processes using it.
+  # See: https://github.com/rusterlium/rustler/blob/46494d261cbedd3c798f584459e42ab7ee6ea1f4/rustler_mix/lib/rustler/compiler.ex#L134
+  defp remove_existing_nif(path) do
+    case File.rm(path) do
+      {:error, :enoent} -> :ok
+      result -> result
     end
   end
 
