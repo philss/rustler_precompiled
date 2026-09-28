@@ -230,6 +230,7 @@ defmodule RustlerPrecompiledTest do
          - x86_64-unknown-linux-gnu
          - x86_64-unknown-linux-musl
         """
+        |> String.replace("\r\n", "\n")
         |> String.trim()
 
       assert {:error, ^error_message} = RustlerPrecompiled.target(config, @available_targets)
@@ -369,10 +370,7 @@ defmodule RustlerPrecompiledTest do
 
   @tag :tmp_dir
   test "check_integrity_from_map/3", %{tmp_dir: tmp_dir} do
-    content = """
-    Roses are red
-    Violets are blue
-    """
+    content = "Roses are red\nViolets are blue\n"
 
     file_path = Path.join(tmp_dir, "poem.txt")
     :ok = File.write(file_path, content)
@@ -845,6 +843,12 @@ defmodule RustlerPrecompiledTest do
     nif_fixtures_dir = Path.join(File.cwd!(), "test/fixtures")
     checksum_sample = File.read!(Path.join(nif_fixtures_dir, "checksum-sample-file.exs"))
     Process.register(self(), :load_data_fun_test)
+
+    # Unload the NIF before other tests replace the shared library.
+    on_exit(fn ->
+      :code.delete(RustlerPrecompilationExample.Native)
+      :code.purge(RustlerPrecompilationExample.Native)
+    end)
 
     in_tmp(tmp_dir, fn ->
       File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
