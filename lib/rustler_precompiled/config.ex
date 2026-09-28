@@ -10,6 +10,7 @@ defmodule RustlerPrecompiled.Config do
     :crate,
     :base_cache_dir,
     :load_data,
+    :load_data_fun,
     :force_build?,
     :targets,
     :nif_versions,
@@ -54,6 +55,9 @@ defmodule RustlerPrecompiled.Config do
       |> Keyword.get(:nif_versions, @default_nif_versions)
       |> validate_list!(:nif_versions, @available_nif_versions)
 
+    # Defaults to 0 like Rustler
+    load_data = opts[:load_data] || 0
+
     %__MODULE__{
       otp_app: otp_app,
       base_url: base_url,
@@ -61,8 +65,8 @@ defmodule RustlerPrecompiled.Config do
       version: version,
       force_build?: pre_release?(version) or Keyword.fetch!(opts, :force_build),
       crate: opts[:crate],
-      # Default to `0` like `Rustler`.
-      load_data: opts[:load_data] || 0,
+      load_data: load_data,
+      load_data_fun: validate_load_data_fun!(load_data, opts[:load_data_fun]),
       base_cache_dir: opts[:base_cache_dir],
       targets: targets,
       nif_versions: nif_versions,
@@ -109,6 +113,30 @@ defmodule RustlerPrecompiled.Config do
     else
       raise "`:base_url` for `RustlerPrecompiled` is a function that does not exist: `#{inspect(module)}.#{function}/1`"
     end
+  end
+
+  # Same validations as done by Rustler
+  # https://github.com/rusterlium/rustler/blob/rustler-0.38.0/rustler_mix/lib/rustler.ex#L114-L146
+  defp validate_load_data_fun!(_load_data, nil), do: nil
+
+  defp validate_load_data_fun!(0, {module, function} = load_data_fun)
+       when is_atom(module) and is_atom(function) do
+    load_data_fun
+  end
+
+  defp validate_load_data_fun!(0, provided_value) do
+    raise """
+    `load_data_fun` has to be `{Module, :function}`.
+    Instead received: #{inspect(provided_value)}
+    """
+  end
+
+  defp validate_load_data_fun!(load_data, load_data_fun) do
+    raise """
+    Only `load_data` or `load_data_fun` can be provided. Instead received:
+    >>> load_data: #{inspect(load_data)}
+    >>> load_data_fun: #{inspect(load_data_fun)}
+    """
   end
 
   defp validate_list!(nil, option, _valid_values), do: raise_for_nil_field_value(option)

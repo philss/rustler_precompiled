@@ -42,6 +42,58 @@ defmodule RustlerPrecompiled.ConfigTest do
     end
   end
 
+  test "new/1 accepts `load_data_fun`" do
+    config =
+      Config.new(
+        otp_app: :rustler_precompiled,
+        module: RustlerPrecompilationExample.Native,
+        base_url:
+          "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+        version: "0.2.0-dev",
+        load_data_fun: {RustlerPrecompilationExample.Native, :load_data}
+      )
+
+    assert config.load_data_fun == {RustlerPrecompilationExample.Native, :load_data}
+  end
+
+  test "new/1 validates `load_data_fun`" do
+    opts = [
+      otp_app: :rustler_precompiled,
+      module: RustlerPrecompilationExample.Native,
+      base_url:
+        "https://github.com/philss/rustler_precompilation_example/releases/download/v0.2.0",
+      version: "0.2.0-dev"
+    ]
+
+    assert_raise RuntimeError,
+                 """
+                 `load_data_fun` has to be `{Module, :function}`.
+                 Instead received: {RustlerPrecompilationExample.Native, :load_data, []}
+                 """,
+                 fn ->
+                   Config.new(
+                     opts ++
+                       [load_data_fun: {RustlerPrecompilationExample.Native, :load_data, []}]
+                   )
+                 end
+
+    assert_raise RuntimeError,
+                 """
+                 Only `load_data` or `load_data_fun` can be provided. Instead received:
+                 >>> load_data: :data
+                 >>> load_data_fun: {RustlerPrecompilationExample.Native, :load_data}
+                 """,
+                 fn ->
+                   Config.new(
+                     opts ++
+                       [
+                         load_data: :data,
+                         load_data_fun: {RustlerPrecompilationExample.Native, :load_data}
+                       ]
+                   )
+                 end
+  end
+
   test "new/1 validates the given targets" do
     opts = [
       otp_app: :rustler_precompiled,
