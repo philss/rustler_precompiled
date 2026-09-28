@@ -518,6 +518,69 @@ defmodule RustlerPrecompiledTest do
     end
 
     @tag :tmp_dir
+    test "safely replaces an open NIF file", %{
+      tmp_dir: tmp_dir,
+      checksum_sample: checksum_sample,
+      nif_fixtures_dir: nif_fixtures_dir
+    } do
+      bypass = Bypass.open()
+
+      in_tmp(tmp_dir, fn ->
+        File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
+
+        Bypass.expect_once(bypass, fn conn ->
+          file_name = List.last(conn.path_info)
+          file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          Plug.Conn.resp(conn, 200, file)
+        end)
+
+        capture_log(fn ->
+          config =
+            RustlerPrecompiled.Config.new(
+              otp_app: :rustler_precompiled,
+              module: RustlerPrecompilationExample.Native,
+              base_cache_dir: tmp_dir,
+              base_url: "http://localhost:#{bypass.port}/download",
+              version: "0.2.0",
+              crate: "example",
+              targets: @available_targets,
+              nif_versions: @default_nif_versions,
+              force_build: false
+            )
+
+          {:ok, metadata} = RustlerPrecompiled.build_metadata(config)
+          archive = Path.join([nif_fixtures_dir, "precompiled_nifs", metadata.file_name])
+          File.mkdir_p!(Path.dirname(metadata.cached_tar_gz))
+          File.cp!(archive, metadata.cached_tar_gz)
+
+          lib_file =
+            :rustler_precompiled
+            |> Application.app_dir("priv/native")
+            |> Path.join(Path.rootname(metadata.file_name, ".tar.gz"))
+
+          File.mkdir_p!(Path.dirname(lib_file))
+          File.write!(lib_file, "old NIF")
+
+          File.open!(lib_file, [:read, :binary], fn file ->
+            assert {:ok, _} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+            assert IO.binread(file, :eof) == "old NIF"
+            refute File.read!(lib_file) == "old NIF"
+          end)
+
+          File.rm!(metadata.cached_tar_gz)
+          File.write!(lib_file, "old NIF")
+
+          File.open!(lib_file, [:read, :binary], fn file ->
+            assert {:ok, _} = RustlerPrecompiled.download_or_reuse_nif_file(config, metadata)
+            assert IO.binread(file, :eof) == "old NIF"
+            refute File.read!(lib_file) == "old NIF"
+          end)
+        end)
+      end)
+    end
+
+    @tag :tmp_dir
     test "a project downloading precompiled NIFs with custom header", %{
       tmp_dir: tmp_dir,
       checksum_sample: checksum_sample,
