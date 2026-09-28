@@ -16,11 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             pair:
               elixir: "1.16"
               otp: "26"
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             pair:
               elixir: "1.20"
               otp: "29"
@@ -33,11 +33,11 @@ jobs:
             pair:
               elixir: "1.20"
               otp: "29"
-          - os: macos-15
+          - os: macos-latest
             pair:
               elixir: "1.20"
               otp: "29"
-          - os: windows-2025
+          - os: windows-latest
             pair:
               elixir: "1.20"
               otp: "29"
