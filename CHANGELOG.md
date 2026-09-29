@@ -7,9 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-29
+
 ### Added
 
 - Add support for NIF version `2.18`, which is shipped with Erlang/OTP 29.
+
+- Add `:load_data_fun` option to load data dynamically.
+
+  This is an option to keep in pair with `Rustler`'s option (available since v0.28).
+  It accepts a `{Module, :function_name}` tuple, and by default it's `nil`.
+  This option cannot be used with the `:load_data` option (it's one or the other).
+
+### Fixed
+
+- Fix removal of existing lib file before trying to extract it, so we don't
+  segfault in case another process is using it.
+
+  This behaviour changed in `0.9.0` by mistake and it was failing silently.
+  See the PR for more details: https://github.com/philss/rustler_precompiled/pull/109
+
+### Removed
+
+- Remove support for Elixir v1.15.
+- Remove support for Rustler before `v0.28`.
 
 ## [0.9.0] - 2026-03-26
 
@@ -345,7 +366,8 @@ This fix:
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/philss/rustler_precompiled/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/philss/rustler_precompiled/compare/v0.8.4...v0.9.0
 [0.8.4]: https://github.com/philss/rustler_precompiled/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/philss/rustler_precompiled/compare/v0.8.2...v0.8.3
