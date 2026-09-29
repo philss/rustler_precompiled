@@ -471,16 +471,21 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
+      me = self()
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
+
+          assert String.ends_with?(file_name, "tar.gz")
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          Plug.Conn.resp(conn, 200, file)
+          send(me, {:req, file_name})
+
+          Passby.resp(conn, 200, file)
         end)
 
         result =
@@ -490,7 +495,7 @@ defmodule RustlerPrecompiledTest do
                 otp_app: :rustler_precompiled,
                 module: RustlerPrecompilationExample.Native,
                 base_cache_dir: tmp_dir,
-                base_url: "http://localhost:#{bypass.port}/download",
+                base_url: "http://localhost:#{passby.port}/download",
                 version: "0.2.0",
                 crate: "example",
                 targets: @available_targets,
@@ -510,9 +515,12 @@ defmodule RustlerPrecompiledTest do
           end)
 
         assert result =~ "Downloading"
-        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
+
+      assert_received {:req, file_name}
+      assert String.ends_with?(file_name, "tar.gz")
     end
 
     @tag :tmp_dir
@@ -521,16 +529,16 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          Plug.Conn.resp(conn, 200, file)
+          Passby.resp(conn, 200, file)
         end)
 
         capture_log(fn ->
@@ -539,7 +547,7 @@ defmodule RustlerPrecompiledTest do
               otp_app: :rustler_precompiled,
               module: RustlerPrecompilationExample.Native,
               base_cache_dir: tmp_dir,
-              base_url: "http://localhost:#{bypass.port}/download",
+              base_url: "http://localhost:#{passby.port}/download",
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
@@ -584,19 +592,19 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          if Plug.Conn.get_req_header(conn, "authorization") == ["Token 123"] do
-            Plug.Conn.resp(conn, 200, file)
+          if Passby.get_req_header(conn, "authorization") == ["Token 123"] do
+            Passby.resp(conn, 200, file)
           else
-            Plug.Conn.resp(conn, 401, "Unauthorized")
+            Passby.resp(conn, 401, "Unauthorized")
           end
         end)
 
@@ -608,7 +616,7 @@ defmodule RustlerPrecompiledTest do
                 module: RustlerPrecompilationExample.Native,
                 base_cache_dir: tmp_dir,
                 base_url:
-                  {"http://localhost:#{bypass.port}/download", [{"authorization", "Token 123"}]},
+                  {"http://localhost:#{passby.port}/download", [{"authorization", "Token 123"}]},
                 version: "0.2.0",
                 crate: "example",
                 targets: @available_targets,
@@ -628,7 +636,7 @@ defmodule RustlerPrecompiledTest do
           end)
 
         assert result =~ "Downloading"
-        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
     end
@@ -639,19 +647,19 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open(port: 1234)
+      passby = Passby.open(port: 1234)
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           %{"file_name" => file_name} = URI.decode_query(conn.query_string)
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          if Plug.Conn.get_req_header(conn, "authorization") == ["Token 123"] do
-            Plug.Conn.resp(conn, 200, file)
+          if Passby.get_req_header(conn, "authorization") == ["Token 123"] do
+            Passby.resp(conn, 200, file)
           else
-            Plug.Conn.resp(conn, 401, "Unauthorized")
+            Passby.resp(conn, 401, "Unauthorized")
           end
         end)
 
@@ -682,7 +690,7 @@ defmodule RustlerPrecompiledTest do
           end)
 
         assert result =~ "Downloading"
-        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
     end
@@ -693,24 +701,24 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
       {:ok, agent} = Agent.start_link(fn -> 1 end)
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect(bypass, fn conn ->
+        Passby.expect(passby, fn conn ->
           current_attempt = Agent.get(agent, & &1)
 
           if current_attempt == 2 do
             file_name = List.last(conn.path_info)
             file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-            Plug.Conn.resp(conn, 200, file)
+            Passby.resp(conn, 200, file)
           else
             :ok = Agent.update(agent, &(&1 + 1))
 
-            Plug.Conn.resp(conn, 500, "Server is down")
+            Passby.resp(conn, 500, "Server is down")
           end
         end)
 
@@ -721,7 +729,7 @@ defmodule RustlerPrecompiledTest do
                 otp_app: :rustler_precompiled,
                 module: RustlerPrecompilationExample.Native,
                 base_cache_dir: tmp_dir,
-                base_url: "http://localhost:#{bypass.port}/download",
+                base_url: "http://localhost:#{passby.port}/download",
                 version: "0.2.0",
                 crate: "example",
                 targets: @available_targets,
@@ -746,7 +754,7 @@ defmodule RustlerPrecompiledTest do
         assert result =~ "Internal Server Error"
 
         assert result =~ "Downloading"
-        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
     end
@@ -756,16 +764,16 @@ defmodule RustlerPrecompiledTest do
       tmp_dir: tmp_dir,
       checksum_sample: checksum_sample
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
       {:ok, agent} = Agent.start_link(fn -> 0 end)
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect(bypass, fn conn ->
+        Passby.expect(passby, fn conn ->
           :ok = Agent.update(agent, &(&1 + 1))
 
-          Plug.Conn.resp(conn, 500, "Server is down")
+          Passby.resp(conn, 500, "Server is down")
         end)
 
         capture_log(fn ->
@@ -774,7 +782,7 @@ defmodule RustlerPrecompiledTest do
               otp_app: :rustler_precompiled,
               module: RustlerPrecompilationExample.Native,
               base_cache_dir: tmp_dir,
-              base_url: "http://localhost:#{bypass.port}/download",
+              base_url: "http://localhost:#{passby.port}/download",
               version: "0.2.0",
               crate: "example",
               max_retries: 0,
@@ -799,14 +807,14 @@ defmodule RustlerPrecompiledTest do
       tmp_dir: tmp_dir,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
 
       in_tmp(tmp_dir, fn ->
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          Plug.Conn.resp(conn, 200, file)
+          Passby.resp(conn, 200, file)
         end)
 
         capture_log(fn ->
@@ -815,7 +823,7 @@ defmodule RustlerPrecompiledTest do
               otp_app: :rustler_precompiled,
               module: RustlerPrecompilationExample.Native,
               base_cache_dir: tmp_dir,
-              base_url: "http://localhost:#{bypass.port}/download",
+              base_url: "http://localhost:#{passby.port}/download",
               version: "0.2.0",
               crate: "example",
               targets: @available_targets,
@@ -1095,16 +1103,16 @@ defmodule RustlerPrecompiledTest do
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
     } do
-      bypass = Bypass.open()
+      passby = Passby.open()
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Bypass.expect_once(bypass, fn conn ->
+        Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
 
-          Plug.Conn.resp(conn, 200, file)
+          Passby.resp(conn, 200, file)
         end)
 
         result =
@@ -1114,7 +1122,7 @@ defmodule RustlerPrecompiledTest do
                 otp_app: :rustler_precompiled,
                 module: RustlerPrecompilationExample.Native,
                 base_cache_dir: tmp_dir,
-                base_url: "http://localhost:#{bypass.port}/download",
+                base_url: "http://localhost:#{passby.port}/download",
                 version: "0.2.0",
                 crate: "example",
                 targets: @available_targets,
@@ -1138,7 +1146,7 @@ defmodule RustlerPrecompiledTest do
           end)
 
         assert result =~ "Downloading"
-        assert result =~ "http://localhost:#{bypass.port}/download"
+        assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
     end
