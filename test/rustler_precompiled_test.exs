@@ -472,13 +472,18 @@ defmodule RustlerPrecompiledTest do
       nif_fixtures_dir: nif_fixtures_dir
     } do
       passby = Passby.open()
+      me = self()
 
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
         Passby.expect_once(passby, fn conn ->
           file_name = List.last(conn.path_info)
+
+          assert String.ends_with?(file_name, "tar.gz")
           file = File.read!(Path.join([nif_fixtures_dir, "precompiled_nifs", file_name]))
+
+          send(me, {:req, file_name})
 
           Passby.resp(conn, 200, file)
         end)
@@ -513,6 +518,9 @@ defmodule RustlerPrecompiledTest do
         assert result =~ "http://localhost:#{passby.port}/download"
         assert result =~ "NIF cached at"
       end)
+
+      assert_received {:req, file_name}
+      assert String.ends_with?(file_name, "tar.gz")
     end
 
     @tag :tmp_dir
