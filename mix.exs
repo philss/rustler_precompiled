@@ -1,7 +1,7 @@
 defmodule RustlerPrecompiled.MixProject do
   use Mix.Project
 
-  @version "0.9.0"
+  @version "0.10.0"
   @repo "https://github.com/philss/rustler_precompiled"
 
   def project do
@@ -35,7 +35,7 @@ defmodule RustlerPrecompiled.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.23", optional: true},
+      {:rustler, "~> 0.28", optional: true},
       {:ex_doc, "~> 0.40", only: :dev},
       {:passby, ">= 0.0.0", only: :test}
     ]
