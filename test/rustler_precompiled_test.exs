@@ -466,7 +466,7 @@ defmodule RustlerPrecompiledTest do
     end
 
     @tag :tmp_dir
-    test "a project downloading precompiled NIFs", %{
+    test "a project downloading precompiled NIFs through a redirect with large headers", %{
       tmp_dir: tmp_dir,
       checksum_sample: checksum_sample,
       nif_fixtures_dir: nif_fixtures_dir
@@ -477,7 +477,16 @@ defmodule RustlerPrecompiledTest do
       in_tmp(tmp_dir, fn ->
         File.write!("checksum-Elixir.RustlerPrecompilationExample.Native.exs", checksum_sample)
 
-        Passby.expect_once(passby, fn conn ->
+        Passby.expect_once(passby, "GET", "/download/:file_name", fn conn ->
+          file_name = List.last(conn.path_info)
+
+          conn
+          |> Passby.put_resp_header("content-security-policy", String.duplicate("a", 12 * 1024))
+          |> Passby.put_resp_header("location", "#{passby.url}/artifacts/#{file_name}")
+          |> Passby.resp(302, "")
+        end)
+
+        Passby.expect_once(passby, "GET", "/artifacts/:file_name", fn conn ->
           file_name = List.last(conn.path_info)
 
           assert String.ends_with?(file_name, "tar.gz")
@@ -496,6 +505,7 @@ defmodule RustlerPrecompiledTest do
                 module: RustlerPrecompilationExample.Native,
                 base_cache_dir: tmp_dir,
                 base_url: "http://localhost:#{passby.port}/download",
+                max_retries: 0,
                 version: "0.2.0",
                 crate: "example",
                 targets: @available_targets,
@@ -521,6 +531,31 @@ defmodule RustlerPrecompiledTest do
 
       assert_received {:req, file_name}
       assert String.ends_with?(file_name, "tar.gz")
+    end
+
+    @tag skip:
+           Application.spec(:inets, :vsn)
+           |> to_string()
+           |> String.split(".")
+           |> Enum.map(&String.to_integer/1)
+           |> then(&(&1 < [9, 7, 2]))
+    test "rejects response headers exceeding 64 KiB" do
+      passby = Passby.open()
+
+      Passby.expect_once(passby, "GET", "/oversized", fn conn ->
+        conn
+        |> Passby.put_resp_header("content-security-policy", String.duplicate("a", 64 * 1024))
+        |> Passby.resp(200, "unused")
+      end)
+
+      capture_log(fn ->
+        assert_raise RuntimeError, ~r/header_too_long.*65536/, fn ->
+          RustlerPrecompiled.download_nif_artifacts_with_checksums!(
+            [{"oversized-headers.tar.gz", "#{passby.url}/oversized"}],
+            max_retries: 0
+          )
+        end
+      end)
     end
 
     @tag :tmp_dir
