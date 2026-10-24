@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-24
+
+### Fixed
+
+- Raise `max_header_size` value in `:httpc` options.
+  This is needed in order to be compatible with new GitHub's HTTP headers values used in redirects.
+
+  In a recent change, GitHub added more hosts to the CSP allow list, and thus this increased
+  the size in bytes of the `Content-Security-Policy` header. The increased value was then failing
+  with the `{:header_too_long, {:max, 10240}}` error from `:httpc`.
+
+  This fix set the maximum value in bytes to `65536`. It does not affect the checksum process.
+
 ## [0.10.0] - 2026-09-29
 
 ### Added
@@ -366,7 +379,8 @@ This fix:
 
 - Add basic features to download and use the precompiled NIFs in a safe way.
 
-[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/philss/rustler_precompiled/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/philss/rustler_precompiled/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/philss/rustler_precompiled/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/philss/rustler_precompiled/compare/v0.8.4...v0.9.0
 [0.8.4]: https://github.com/philss/rustler_precompiled/compare/v0.8.3...v0.8.4
