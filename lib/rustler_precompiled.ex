@@ -980,7 +980,7 @@ defmodule RustlerPrecompiled do
       ]
       |> maybe_add_proxy_auth(proxy_auth)
 
-    options = [body_format: :binary]
+    options = [body_format: :binary, max_header_size: 65_536]
 
     request_headers =
       Enum.map(request_headers, fn {k, v} when is_binary(k) -> {String.to_charlist(k), v} end)
